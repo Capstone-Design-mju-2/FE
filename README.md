@@ -49,11 +49,13 @@ PR과 `main` 푸시마다 CI가 `lint`와 `build`를 돌린다.
 
 ```text
 src/
-  api/        # 서버 호출 (client.ts: 공통 fetch, chat.ts: /chat)
-  types/      # API 계약 타입 (BE docs/API.md와 맞춘다)
-  mocks/      # BE docs/mocks의 목업 응답
-  App.tsx
-  index.css   # 색·글꼴 토큰
+  api/          # 서버 호출 (client.ts: 공통 fetch, chat.ts: /chat)
+  components/   # ChatInput, ProductCard
+  lib/          # 가격·재고·배송일 표시 형식
+  types/        # API 계약 타입 (BE docs/API.md와 맞춘다)
+  mocks/        # BE docs/mocks의 목업 응답
+  App.tsx       # 채팅 화면
+  index.css     # 색·글꼴 토큰
 ```
 
 ## 화면 표시 규칙 (API.md 4절)

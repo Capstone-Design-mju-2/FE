@@ -47,17 +47,3 @@ textarea {
 button {
   cursor: pointer;
 }
-
-.container {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 32px 16px;
-}
-
-.muted {
-  color: var(--color-text-muted);
-}
-
-.error {
-  color: var(--color-accent-dark);
-}
