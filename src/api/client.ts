@@ -11,6 +11,8 @@ export class ApiRequestError extends Error {
   }
 }
 
+const TIMEOUT_MS = 15_000
+
 // 개발 중에는 vite.config.ts의 프록시가 /api 요청을 agent-service로 넘긴다.
 export async function postJson<T>(path: string, body: unknown): Promise<T> {
   let res: Response
@@ -19,8 +21,15 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     })
-  } catch {
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'TimeoutError') {
+      throw new ApiRequestError(0, {
+        code: 'TIMEOUT',
+        message: '응답이 너무 오래 걸려요.',
+      })
+    }
     throw new ApiRequestError(0, {
       code: 'NETWORK_ERROR',
       message: '서버에 연결하지 못했습니다.',

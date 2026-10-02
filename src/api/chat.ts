@@ -1,14 +1,41 @@
-import mockResponse from '../mocks/chat-response.example.json'
+import exampleResponse from '../mocks/chat-response.example.json'
 import type { ChatRequest, ChatResponse } from '../types/api'
-import { postJson } from './client'
+import { ApiRequestError, postJson } from './client'
 
 const useMock = import.meta.env.VITE_USE_MOCK === 'true'
 
 export async function sendChat(message: string): Promise<ChatResponse> {
-  if (useMock) {
-    // 로딩 화면을 확인할 수 있게 조금 기다린다.
-    await new Promise((resolve) => setTimeout(resolve, 600))
-    return mockResponse as ChatResponse
-  }
+  if (useMock) return mockChat()
   return postJson<ChatResponse>('/api/v1/chat', { message } satisfies ChatRequest)
+}
+
+// 목업 모드에서 주소 뒤에 ?mock=<상황>을 붙이면 상태 화면을 BE 없이 확인할 수 있다.
+//   (없음)    목업 응답 그대로
+//   empty     결과 0개 (BE: 검색어를 못 뽑았거나 검색 결과가 없을 때)
+//   unknown   order-service 장애 (재고 전부 UNKNOWN)
+//   error     catalog-service 장애 (502 PRODUCT_SEARCH_FAILED)
+async function mockChat(): Promise<ChatResponse> {
+  // 로딩 화면을 확인할 수 있게 조금 기다린다.
+  await new Promise((resolve) => setTimeout(resolve, 800))
+  const base = exampleResponse as ChatResponse
+
+  switch (new URLSearchParams(window.location.search).get('mock')) {
+    case 'empty':
+      return { answer: '조건에 맞는 상품을 찾지 못했습니다.', products: [] }
+    case 'unknown':
+      return {
+        ...base,
+        products: base.products.map((p) => ({
+          ...p,
+          inventory: { status: 'UNKNOWN', quantity: null, estimatedDeliveryDate: null },
+        })),
+      }
+    case 'error':
+      throw new ApiRequestError(502, {
+        code: 'PRODUCT_SEARCH_FAILED',
+        message: '상품 검색에 실패했습니다.',
+      })
+    default:
+      return base
+  }
 }
