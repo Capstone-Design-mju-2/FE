@@ -39,10 +39,20 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
   if (!res.ok) {
     const error = await res.json().catch(() => null)
     throw new ApiRequestError(res.status, {
-      code: error?.code ?? 'UNKNOWN_ERROR',
-      message: error?.message ?? '잠시 후 다시 시도해 주세요.',
+      code: typeof error?.code === 'string' ? error.code : 'UNKNOWN_ERROR',
+      message: typeof error?.message === 'string' ? error.message : '잠시 후 다시 시도해 주세요.',
     })
   }
 
-  return res.json() as Promise<T>
+  try {
+    return await res.json() as T
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'TimeoutError') {
+      throw new ApiRequestError(0, { code: 'TIMEOUT', message: '응답이 너무 오래 걸려요.' })
+    }
+    throw new ApiRequestError(res.status, {
+      code: 'INVALID_RESPONSE',
+      message: '서버 응답을 읽지 못했어요. 다시 시도해 주세요.',
+    })
+  }
 }

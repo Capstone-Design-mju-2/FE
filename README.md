@@ -49,10 +49,23 @@ VITE_USE_MOCK=false
 | --- | --- |
 | `npm run dev` | 개발 서버 |
 | `npm run lint` | ESLint |
+| `npm test` | 실제 로컬 HTTP 요청·장애 응답·응답 구조 회귀 테스트 (Node 24) |
 | `npm run build` | 타입 검사 + 빌드 |
 | `npm run preview` | 빌드 결과 미리 보기 |
 
-PR과 `main` 푸시마다 CI가 `lint`와 `build`를 돌린다.
+PR과 `main` 푸시마다 CI가 `lint`, `build`, `test`를 돌린다.
+
+## Stage 1B 실제 연동 확인
+
+`.env.development.local`에 `VITE_USE_MOCK=false`와 `AGENT_SERVICE_URL=http://127.0.0.1:8000`을 설정하고 개발 서버를 재시작한다. 다른 주소에서 BE를 실행하면 `AGENT_SERVICE_URL`을 바꾼다.
+
+1. BE의 catalog·order·agent를 실행하고 실제 데이터에 있는 키워드로 질문한다. 개발자 도구에서 `POST /api/v1/chat`의 `{message}` 요청과 카드 응답을 확인한다.
+2. order-service를 중지하고 같은 질문을 보낸다. 카드가 유지되고 모든 재고가 `재고 확인 불가`인지 확인한다.
+3. catalog-service를 중지하고 질문한다. 서버의 `code`, `message`와 다시 시도 버튼이 표시되는지 확인한다.
+4. 서비스를 복구한 뒤 다시 시도를 누른다. 같은 질문으로 카드가 표시되는지 확인한다.
+5. 검색 결과가 없는 질문으로 결과 0개 안내를 확인한다.
+
+`npm test`는 임시 로컬 HTTP 서버와 응답 fixture로 FE의 전송·오류 처리를 검증한다. 실제 BE 연동이나 브라우저 화면 검증을 대신하지 않는다. 개발 프록시는 `npm run dev`에서 적용되며, 배포 환경에서는 `/api`를 BE로 전달하는 별도 구성이 필요하다.
 
 ## 폴더 구조
 

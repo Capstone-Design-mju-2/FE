@@ -1,12 +1,20 @@
 import exampleResponse from '../mocks/chat-response.example.json'
 import type { ChatRequest, ChatResponse } from '../types/api'
 import { ApiRequestError, postJson } from './client'
+import { isChatResponse } from './validateChat'
 
 const useMock = import.meta.env.VITE_USE_MOCK === 'true'
 
 export async function sendChat(message: string): Promise<ChatResponse> {
   if (useMock) return mockChat()
-  return postJson<ChatResponse>('/api/v1/chat', { message } satisfies ChatRequest)
+  const response = await postJson<unknown>('/api/v1/chat', { message } satisfies ChatRequest)
+  if (!isChatResponse(response)) {
+    throw new ApiRequestError(200, {
+      code: 'INVALID_RESPONSE',
+      message: '서버 응답 형식이 올바르지 않아요. 다시 시도해 주세요.',
+    })
+  }
+  return response
 }
 
 // 목업 모드에서 주소 뒤에 ?mock=<상황>을 붙이면 상태 화면을 BE 없이 확인할 수 있다.
