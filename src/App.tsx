@@ -29,8 +29,8 @@ function App() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
-  const ask = async (question: string) => {
-    setInput('')
+  const ask = async (question: string, preserveDraft = false) => {
+    if (!preserveDraft) setInput('')
     setLoading(true)
     try {
       const response = await sendChat(question)
@@ -41,7 +41,7 @@ function App() {
           ? { code: e.code, detail: e.message }
           : { code: 'UNKNOWN_ERROR', detail: '알 수 없는 오류가 발생했어요.' }
       setMessages((prev) => [...prev, { id: nextId++, role: 'error', question, ...error }])
-      setInput(question) // 입력했던 질문을 남긴다
+      if (!preserveDraft) setInput(question) // 재시도 중에는 작성 중인 질문을 보존한다
     } finally {
       setLoading(false)
     }
@@ -57,15 +57,23 @@ function App() {
   const retry = (errorId: number, question: string) => {
     if (loading) return
     setMessages((prev) => prev.filter((m) => m.id !== errorId))
-    ask(question)
+    ask(question, true)
   }
+
+  const latest = messages.at(-1)
+  const announcement = loading
+    ? '찾고 있어요…'
+    : latest?.role === 'assistant'
+      ? `검색이 완료됐어요. 상품 ${latest.response.products.length}개를 찾았어요.`
+      : ''
 
   return (
     <div className="chat">
       <header className="chat__header">PeauPick</header>
 
       <main className="chat__scroll">
-        <div className="chat__list" aria-live="polite">
+        <p className="sr-only" role="status" aria-atomic="true">{announcement}</p>
+        <div className="chat__list">
           {messages.length === 0 && !loading && (
             <section className="chat__welcome">
               <h1>어떤 화장품을 찾고 있어요?</h1>
