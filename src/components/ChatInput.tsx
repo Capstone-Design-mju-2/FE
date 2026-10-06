@@ -14,7 +14,9 @@ function ChatInput({ inputRef, value, disabled, onChange, onSubmit }: Props) {
   const wasDisabled = useRef(disabled)
 
   useEffect(() => {
-    if (wasDisabled.current && !disabled) inputRef.current?.focus()
+    if (wasDisabled.current && !disabled && window.matchMedia('(pointer: fine)').matches) {
+      inputRef.current?.focus()
+    }
     wasDisabled.current = disabled
   }, [disabled, inputRef])
 

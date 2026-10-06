@@ -136,7 +136,7 @@ function App() {
           })}
 
           {loading && (
-            <div className="loading" role="status">
+            <div className="loading">
               <div className="loading__card" aria-hidden="true" />
               <div className="loading__card" aria-hidden="true" />
               <p className="loading__text">

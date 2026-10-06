@@ -36,7 +36,10 @@ function ProductCard({ product }: Props) {
           <ul className="product-card__evidence" aria-label="추천의 근거가 된 리뷰">
             {product.evidence.map((review) => (
               <li key={review.reviewId}>
-                <span className="product-card__rating" aria-label={`별점 ${review.rating}점`}>★ {review.rating}</span>
+                <span className="product-card__rating">
+                  <span aria-hidden="true">★ {review.rating}</span>
+                  <span className="sr-only">{`별점 ${review.rating}점`}</span>
+                </span>
                 <q>{review.excerpt}</q>
               </li>
             ))}
