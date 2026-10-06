@@ -38,6 +38,8 @@ function App() {
     try {
       const response = await sendChat(question)
       setMessages((prev) => [...prev, { id: nextId++, role: 'assistant', response }])
+      // 재시도가 성공하면 실패 때 되돌려 둔 질문만 지우고, 새로 쓰던 질문은 남긴다.
+      if (preserveDraft) setInput((prev) => (prev.trim() === question ? '' : prev))
     } catch (e) {
       const error =
         e instanceof ApiRequestError
