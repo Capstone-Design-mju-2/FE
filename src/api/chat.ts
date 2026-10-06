@@ -28,6 +28,23 @@ async function mockChat(): Promise<ChatResponse> {
   const base = exampleResponse as ChatResponse
 
   switch (new URLSearchParams(window.location.search).get('mock')) {
+    case 'stage1a':
+      return { ...base, products: base.products.map((p) => ({ ...p, reason: null })) }
+    case 'stage1c': {
+      // 시연용 날짜만 상대 날짜로 만든다. 원본 계약 fixture와 실제 API 값은 유지한다.
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const date = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
+      return {
+        ...base,
+        products: base.products.map((p) => ({
+          ...p,
+          inventory: p.inventory.status === 'IN_STOCK'
+            ? { ...p.inventory, estimatedDeliveryDate: date }
+            : { ...p.inventory },
+        })),
+      }
+    }
     case 'empty':
       return { answer: '조건에 맞는 상품을 찾지 못했습니다.', products: [] }
     case 'unknown':

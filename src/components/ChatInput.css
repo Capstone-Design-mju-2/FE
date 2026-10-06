@@ -18,6 +18,11 @@
   font-size: 16px;
 }
 
+.chat-input:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
 .chat-input button {
   height: 40px;
   padding: 0 18px;

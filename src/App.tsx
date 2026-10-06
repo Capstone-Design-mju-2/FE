@@ -24,9 +24,12 @@ function App() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    bottomRef.current?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+    })
   }, [messages, loading])
 
   const ask = async (question: string) => {
@@ -60,16 +63,31 @@ function App() {
     ask(question)
   }
 
+  const resetChat = () => {
+    if (loading) return
+    setMessages([])
+    setInput('')
+    inputRef.current?.focus()
+  }
+
   return (
     <div className="chat">
-      <header className="chat__header">PeauPick</header>
+      <header className="chat__header">
+        <div className="chat__header-inner">
+          <span className="chat__brand">PeauPick</span>
+          <button type="button" className="chat__reset" onClick={resetChat}
+            disabled={loading || (messages.length === 0 && input.length === 0)}>
+            새 대화
+          </button>
+        </div>
+      </header>
 
       <main className="chat__scroll">
         <div className="chat__list" aria-live="polite">
           {messages.length === 0 && !loading && (
             <section className="chat__welcome">
               <h1>어떤 화장품을 찾고 있어요?</h1>
-              <p>지금 살 수 있는 상품만, 실제 리뷰를 근거로 골라 드려요.</p>
+              <p>실제 리뷰를 근거로 고르고, 재고와 배송 정보를 함께 확인해요.</p>
               <div className="chat__examples">
                 {EXAMPLES.map((example) => (
                   <button key={example} type="button" onClick={() => send(example)}>
@@ -110,9 +128,9 @@ function App() {
           })}
 
           {loading && (
-            <div className="loading">
-              <div className="loading__card" />
-              <div className="loading__card" />
+            <div className="loading" role="status">
+              <div className="loading__card" aria-hidden="true" />
+              <div className="loading__card" aria-hidden="true" />
               <p className="loading__text">
                 <span className="loading__dots" aria-hidden="true">
                   <span />
@@ -128,7 +146,7 @@ function App() {
       </main>
 
       <footer className="chat__footer">
-        <ChatInput value={input} disabled={loading} onChange={setInput} onSubmit={send} />
+        <ChatInput inputRef={inputRef} value={input} disabled={loading} onChange={setInput} onSubmit={send} />
       </footer>
     </div>
   )
