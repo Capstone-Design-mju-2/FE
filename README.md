@@ -34,6 +34,15 @@ npm run dev      # http://localhost:5173
 VITE_USE_MOCK=false
 ```
 
+목업 모드에서는 주소 뒤에 `?mock=`을 붙여 상태 화면을 BE 없이 확인할 수 있다.
+
+| 주소 | 상황 |
+| --- | --- |
+| `/` | 목업 응답 그대로 (재고 있음·품절·확인 불가 각 1개) |
+| `/?mock=empty` | 결과 0개 |
+| `/?mock=unknown` | order-service 장애 (재고 전부 확인 불가) |
+| `/?mock=error` | catalog-service 장애 (502 오류 → 다시 시도) |
+
 ## 명령어
 
 | 명령어 | 설명 |
