@@ -8,16 +8,15 @@ import { isChatResponse } from '../src/api/validateChat.ts'
 
 const fixture = JSON.parse(await readFile(new URL('../src/mocks/chat-response.example.json', import.meta.url)))
 
-test('실제 HTTP: 질문 본문 전송, 정상/빈 결과/재고 장애/검색 장애/재시도', async (t) => {
+test('로컬 HTTP 서버: 질문 본문 전송, 정상/빈 결과/재고 장애/검색 장애/재시도', async (t) => {
   let status = 200
   let response = fixture
+  const requests = []
   const server = createServer(async (req, res) => {
-    assert.equal(req.method, 'POST')
-    assert.equal(req.url, '/api/v1/chat')
-    assert.equal(req.headers['content-type'], 'application/json')
     const chunks = []
     for await (const chunk of req) chunks.push(chunk)
-    assert.deepEqual(JSON.parse(Buffer.concat(chunks)), { message: '순한 선크림' })
+    requests.push({ method: req.method, url: req.url, headers: req.headers,
+      body: Buffer.concat(chunks).toString('utf8') })
     res.writeHead(status, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(response))
   })
@@ -39,6 +38,13 @@ test('실제 HTTP: 질문 본문 전송, 정상/빈 결과/재고 장애/검색 
   status = 200
   response = fixture
   assert.deepEqual(await request(), fixture)
+  assert.equal(requests.length, 5)
+  for (const received of requests) {
+    assert.equal(received.method, 'POST')
+    assert.equal(received.url, '/api/v1/chat')
+    assert.equal(received.headers['content-type'], 'application/json')
+    assert.deepEqual(JSON.parse(received.body), { message: '순한 선크림' })
+  }
 })
 
 test('잘못된 응답은 렌더링 전에 거부하고 reason은 null/문자열 모두 허용', () => {
@@ -49,6 +55,8 @@ test('잘못된 응답은 렌더링 전에 거부하고 reason은 null/문자열
     { ...fixture, products: [{ ...fixture.products[0], evidence: [null] }] },
     { ...fixture, products: [{ ...fixture.products[0], inventory: { status: 'NOT_FOUND' } }] },
   ]) assert.equal(isChatResponse(invalid), false)
+  // 계약 위반 카드를 조용히 제외하지 않고 응답 전체를 거부한다.
+  assert.equal(isChatResponse({ ...fixture, products: [...fixture.products, null] }), false)
 })
 
 test('네트워크·시간 초과·잘못된 JSON·비 JSON 오류 응답을 표시 가능한 오류로 변환', async (t) => {
