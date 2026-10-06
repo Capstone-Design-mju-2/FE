@@ -9,6 +9,12 @@
 
 React 19 · TypeScript · Vite · ESLint
 
+## 디자인 작업 기준
+
+팀에 공유한 `docs`의 디자인 파일을 기준으로 화면을 구현한다. `docs/Beauty Shop.dc.html`은 색·글꼴·카드 등 시각 스타일, `docs/Wireframes.dc.html`은 화면 구성과 흐름의 기준이다. 이후 추가되는 디자인 자료도 작업 전에 확인한다. 기능 범위와 데이터 표시는 Milestone의 해당 Stage 및 API 계약에 맞춘다.
+
+디자인 자료는 기존 `docs/` Git 제외 정책에 따라 로컬에서 관리한다.
+
 ## 시작하기
 
 Node 24가 필요하다 (`.nvmrc`).
