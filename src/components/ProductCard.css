@@ -110,6 +110,33 @@
   color: var(--color-stock-unknown-fg);
 }
 
+.product-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.product-card__actions button {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.product-card__actions button:hover:not(:disabled) {
+  background: var(--color-accent);
+}
+
+.product-card__actions button:disabled {
+  background: #ede7e1;
+  color: #a69c93;
+  cursor: not-allowed;
+}
+
 @media (max-width: 480px) {
   .product-card {
     grid-template-columns: 64px minmax(0, 1fr);

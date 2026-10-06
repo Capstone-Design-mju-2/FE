@@ -1,13 +1,16 @@
 import { formatInventory, formatPrice } from '../lib/format'
+import { canOrder } from '../lib/order'
 import type { Product } from '../types/api'
 import './ProductCard.css'
 
 type Props = {
   product: Product
+  onOrder?: (product: Product) => void
 }
 
-function ProductCard({ product }: Props) {
+function ProductCard({ product, onOrder }: Props) {
   const stock = formatInventory(product.inventory)
+  const orderable = canOrder(product.inventory)
 
   return (
     <article className="product-card">
@@ -45,6 +48,15 @@ function ProductCard({ product }: Props) {
             ))}
           </ul>
         </div>
+
+        {onOrder && (
+          <div className="product-card__actions">
+            {/* 재고 있음일 때만 주문할 수 있다. 확인하지 못한 재고는 잠근다. */}
+            <button type="button" onClick={() => onOrder(product)} disabled={!orderable}>
+              {orderable ? '주문' : '주문 불가'}
+            </button>
+          </div>
+        )}
       </div>
     </article>
   )

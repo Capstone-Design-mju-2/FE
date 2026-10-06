@@ -60,13 +60,23 @@ VITE_USE_MOCK=false
 
 응답 후 자동 포커스는 정밀 포인터 환경(`pointer: fine`)에서만 적용한다. 터치 환경에서는 카드를 가리지 않도록 자동 포커스를 주지 않으며, 새 대화를 누른 경우에는 입력창으로 이동한다. 실제 OS 한글 입력기 확인 시 macOS Safari에서도 조합 확정 Enter와 전송 Enter를 점검한다. 실제 BE·LLM 시연 완료 조건은 별도로 확인한다.
 
+## 주문 확인 화면 (목업)
+
+카드의 **주문** 버튼을 누르면 채팅 위 오른쪽 패널(와이어프레임 5a)이 열린다. 주문은 재고 있음일 때만 누를 수 있고, 품절·재고 확인 불가 카드는 **주문 불가**로 잠긴다.
+
+- 옵션은 아직 API 계약에 없어서 `src/mocks/product-options.example.json`(상품 101·102·103)을 쓴다. 목업에 없는 상품은 옵션 "기본" 하나로 표시한다. 타입은 `src/types/order.ts`의 임시 타입이며 주문 API 계약이 나오면 교체한다.
+- 품절 옵션은 선택할 수 없다. 처음에는 품절이 아닌 첫 옵션이 선택된다.
+- 수량 상한은 재고 수와 임시 상한 5개 중 작은 값이다 (PRD 열린 질문, `src/lib/order.ts`의 `MAX_ORDER_QUANTITY`).
+- **주문하기**는 주문 API·주문 완료 화면을 연결하기 전이라 "준비 중" 안내만 보여 준다.
+- Esc·바깥 영역·✕로 닫으면 누른 주문 버튼으로 포커스가 돌아간다. 패널이 열려 있는 동안 채팅 화면은 `inert`로 잠긴다.
+
 ## 명령어
 
 | 명령어 | 설명 |
 | --- | --- |
 | `npm run dev` | 개발 서버 |
 | `npm run lint` | ESLint |
-| `npm test` | 실제 로컬 HTTP 요청·장애 응답·응답 구조 회귀 테스트 (Node 24) |
+| `npm test` | 로컬 HTTP 요청·장애 응답·응답 구조, 배송일 표시, 주문 수량·옵션 규칙 회귀 테스트 (Node 24) |
 | `npm run build` | 타입 검사 + 빌드 |
 | `npm run preview` | 빌드 결과 미리 보기 |
 
@@ -88,11 +98,11 @@ PR과 `main` 푸시마다 CI가 `lint`, `build`, `test`를 돌린다.
 
 ```text
 src/
-  api/          # 서버 호출 (client.ts: 공통 fetch, chat.ts: /chat)
-  components/   # ChatInput, ProductCard
-  lib/          # 가격·재고·배송일 표시 형식
-  types/        # API 계약 타입 (BE docs/API.md와 맞춘다)
-  mocks/        # BE docs/mocks의 목업 응답
+  api/          # 서버 호출 (client.ts: 공통 fetch, chat.ts: /chat, order.ts: 목업 옵션)
+  components/   # ChatInput, ProductCard, OrderSheet
+  lib/          # 가격·재고·배송일 표시 형식, 주문 수량·옵션 규칙
+  types/        # API 계약 타입 (api.ts: BE docs/API.md, order.ts: 주문 계약 전 임시 타입)
+  mocks/        # BE docs/mocks의 목업 응답, 주문 옵션 목업
   App.tsx       # 채팅 화면
   index.css     # 색·글꼴 토큰
 ```
