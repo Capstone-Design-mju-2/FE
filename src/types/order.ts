@@ -11,3 +11,15 @@ export type ProductOptions = {
   label: string // 옵션 묶음 이름. 예: 용량, 호수, 색상
   options: ProductOption[]
 }
+
+// 브라우저 내 시연 결과. 실제 주문 API 응답 계약과는 별개다.
+export type MockOrderReceipt = {
+  orderId: string
+  productName: string
+  brand: string
+  optionName: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  estimatedDeliveryDate: string | null
+}

@@ -1,5 +1,5 @@
-import type { Inventory } from '../types/api'
-import type { ProductOption, ProductOptions } from '../types/order'
+import type { Inventory, Product } from '../types/api'
+import type { MockOrderReceipt, ProductOption, ProductOptions } from '../types/order'
 
 // 옵션은 아직 API 계약에 없다. 목업 모드에서만 목업 옵션을 쓰고, 실제 API 모드에서는
 // 상품 ID가 목업과 겹쳐도 목업 옵션을 붙이지 않는다 (null = 옵션 정보 없음).
@@ -31,4 +31,19 @@ export function clampQuantity(value: number, max: number): number {
 
 export function firstAvailableOption(options: ProductOption[]): ProductOption | null {
   return options.find((option) => !option.soldOut) ?? null
+}
+
+export function buildMockOrderReceipt(
+  product: Product, options: ProductOptions | null, optionId: number | null,
+  quantity: number, orderId: string,
+): MockOrderReceipt | null {
+  const option = options?.options.find((item) => item.optionId === optionId && !item.soldOut)
+  if (!option || !canOrder(product.inventory) || !Number.isInteger(quantity) ||
+    quantity < 1 || quantity > maxQuantity(product.inventory)) return null
+
+  return {
+    orderId, productName: product.name, brand: product.brand, optionName: option.name,
+    quantity, unitPrice: product.price, totalPrice: product.price * quantity,
+    estimatedDeliveryDate: product.inventory.estimatedDeliveryDate,
+  }
 }

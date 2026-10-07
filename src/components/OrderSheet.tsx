@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { getProductOptions } from '../api/order'
+import { createMockOrder, getProductOptions } from '../api/order'
+import OrderComplete from './OrderComplete'
+import type { MockOrderReceipt } from '../types/order'
 import { formatDelivery, formatPrice } from '../lib/format'
 import { clampQuantity, firstAvailableOption, maxQuantity } from '../lib/order'
 import type { Product } from '../types/api'
@@ -24,7 +26,7 @@ function OrderSheet({ product, onClose }: Props) {
     () => (productOptions && firstAvailableOption(productOptions.options)?.optionId) ?? null,
   )
   const [quantity, setQuantity] = useState(1)
-  const [submitted, setSubmitted] = useState(false)
+  const [receipt, setReceipt] = useState<MockOrderReceipt | null>(null)
   const max = maxQuantity(product.inventory)
   const allSoldOut = productOptions !== null && optionId === null
 
@@ -54,7 +56,7 @@ function OrderSheet({ product, onClose }: Props) {
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [onClose, receipt])
 
   return (
     <div className="order-sheet">
@@ -67,106 +69,105 @@ function OrderSheet({ product, onClose }: Props) {
         aria-labelledby={titleId}
       >
         <header className="order-sheet__header">
-          <h2 id={titleId}>주문 확인</h2>
-          <button ref={closeRef} type="button" className="order-sheet__close" onClick={onClose} aria-label="주문 확인 닫기">
+          <h2 id={titleId}>{receipt ? '주문 완료' : '주문 확인'}</h2>
+          <button ref={closeRef} type="button" className="order-sheet__close" onClick={onClose} aria-label={receipt ? '주문 완료 닫기' : '주문 확인 닫기'}>
             ✕
           </button>
         </header>
 
-        <div className="order-sheet__body">
-          <p className="order-sheet__trial">결제 없는 체험 주문입니다</p>
+        {receipt ? <OrderComplete receipt={receipt} onClose={onClose} /> : <>
+          <div className="order-sheet__body">
+            <p className="order-sheet__trial">결제 없는 체험 주문입니다</p>
 
-          <div className="order-sheet__product">
-            <div className="order-sheet__thumb" aria-hidden="true" />
-            <div>
-              <div className="order-sheet__brand">{product.brand}</div>
-              <div className="order-sheet__name">{product.name}</div>
-              <div>{formatPrice(product.price)}</div>
-            </div>
-          </div>
-
-          {productOptions === null ? (
-            <div className="order-sheet__field">
-              <div className="order-sheet__label">옵션</div>
-              <p className="order-sheet__note">옵션 정보를 아직 불러올 수 없어요.</p>
-            </div>
-          ) : (
-            <fieldset className="order-sheet__field">
-              <legend>{productOptions.label}</legend>
-              <div className="order-sheet__options">
-                {productOptions.options.map((option) => (
-                  <label
-                    key={option.optionId}
-                    className={`option-chip${option.soldOut ? ' option-chip--sold-out' : ''}`}
-                  >
-                    <input
-                      type="radio"
-                      name={`option-${product.productId}`}
-                      value={option.optionId}
-                      checked={optionId === option.optionId}
-                      disabled={option.soldOut}
-                      onChange={() => setOptionId(option.optionId)}
-                    />
-                    <span>{option.soldOut ? `${option.name} 품절` : option.name}</span>
-                  </label>
-                ))}
+            <div className="order-sheet__product">
+              <div className="order-sheet__thumb" aria-hidden="true" />
+              <div>
+                <div className="order-sheet__brand">{product.brand}</div>
+                <div className="order-sheet__name">{product.name}</div>
+                <div>{formatPrice(product.price)}</div>
               </div>
-            </fieldset>
-          )}
+            </div>
 
-          <div className="order-sheet__row">
-            <span className="order-sheet__label" id={`${titleId}-qty`}>수량</span>
-            <div className="stepper" role="group" aria-labelledby={`${titleId}-qty`}>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => clampQuantity(q - 1, max))}
-                disabled={quantity <= 1}
-                aria-label="수량 줄이기"
-              >
-                −
-              </button>
-              <output aria-live="polite">{quantity}</output>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => clampQuantity(q + 1, max))}
-                disabled={quantity >= max}
-                aria-label="수량 늘리기"
-              >
-                +
-              </button>
+            {productOptions === null ? (
+              <div className="order-sheet__field">
+                <div className="order-sheet__label">옵션</div>
+                <p className="order-sheet__note">옵션 정보를 아직 불러올 수 없어요.</p>
+              </div>
+            ) : (
+              <fieldset className="order-sheet__field">
+                <legend>{productOptions.label}</legend>
+                <div className="order-sheet__options">
+                  {productOptions.options.map((option) => (
+                    <label
+                      key={option.optionId}
+                      className={`option-chip${option.soldOut ? ' option-chip--sold-out' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name={`option-${product.productId}`}
+                        value={option.optionId}
+                        checked={optionId === option.optionId}
+                        disabled={option.soldOut}
+                        onChange={() => setOptionId(option.optionId)}
+                      />
+                      <span>{option.soldOut ? `${option.name} 품절` : option.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+
+            <div className="order-sheet__row">
+              <span className="order-sheet__label" id={`${titleId}-qty`}>수량</span>
+              <div className="stepper" role="group" aria-labelledby={`${titleId}-qty`}>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => clampQuantity(q - 1, max))}
+                  disabled={quantity <= 1}
+                  aria-label="수량 줄이기"
+                >
+                  −
+                </button>
+                <output aria-live="polite">{quantity}</output>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => clampQuantity(q + 1, max))}
+                  disabled={quantity >= max}
+                  aria-label="수량 늘리기"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            {quantity >= max && max > 1 && (
+              <p className="order-sheet__hint">한 번에 최대 {max}개까지 주문할 수 있어요.</p>
+            )}
+
+            <div className="order-sheet__row">
+              <span className="order-sheet__label">배송 예정일</span>
+              <span>{formatDelivery(product.inventory.estimatedDeliveryDate)}</span>
             </div>
           </div>
-          {quantity >= max && max > 1 && (
-            <p className="order-sheet__hint">한 번에 최대 {max}개까지 주문할 수 있어요.</p>
-          )}
 
-          <div className="order-sheet__row">
-            <span className="order-sheet__label">배송 예정일</span>
-            <span>{formatDelivery(product.inventory.estimatedDeliveryDate)}</span>
-          </div>
-        </div>
-
-        <footer className="order-sheet__footer">
-          <div className="order-sheet__total">
-            <b>합계</b>
-            <b className="order-sheet__amount">{formatPrice(product.price * quantity)}</b>
-          </div>
-          {allSoldOut && <p className="order-sheet__hint">모든 옵션이 품절이에요.</p>}
-          {/* 주문 API·주문 완료 화면은 다음 단계에서 연결한다. */}
-          {submitted && (
-            <p className="order-sheet__hint" role="status">
-              체험 주문 접수는 준비 중이에요.
-            </p>
-          )}
-          <button
-            type="button"
-            className="order-sheet__submit"
-            disabled={allSoldOut}
-            onClick={() => setSubmitted(true)}
-          >
-            주문하기
-          </button>
-        </footer>
+          <footer className="order-sheet__footer">
+            <div className="order-sheet__total">
+              <b>합계</b>
+              <b className="order-sheet__amount">{formatPrice(product.price * quantity)}</b>
+            </div>
+            {allSoldOut && <p className="order-sheet__hint">모든 옵션이 품절이에요.</p>}
+            <p className="order-sheet__hint">화면 체험용으로, 실제 주문 접수·재고 차감은 이루어지지 않아요.</p>
+            <button
+              type="button"
+              className="order-sheet__submit"
+              disabled={productOptions === null || allSoldOut}
+              onClick={() => {
+                if (!receipt) setReceipt(createMockOrder(product, optionId, quantity))
+              }}
+            >
+              주문하기
+            </button>
+          </footer>
+          </>}
       </section>
     </div>
   )
