@@ -6,6 +6,7 @@ import {
   clampQuantity,
   firstAvailableOption,
   maxQuantity,
+  resolveProductOptions,
 } from '../src/lib/order.ts'
 
 const inStock = (quantity) => ({ status: 'IN_STOCK', quantity, estimatedDeliveryDate: '2026-10-07' })
@@ -26,6 +27,17 @@ test('수량 상한은 재고와 임시 상한 중 작은 값이고, 입력값�
   assert.equal(clampQuantity(4, 3), 3)
   assert.equal(clampQuantity(2.7, 3), 2)
   assert.equal(clampQuantity(Number.NaN, 3), 1)
+})
+
+test('목업 옵션은 목업 모드에서만 쓰고, 실제 API 모드에서는 ID가 겹쳐도 옵션 정보 없음', () => {
+  const mockOptions = {
+    101: { label: '용량', options: [{ optionId: 1011, name: '50ml', soldOut: false }] },
+  }
+  assert.deepEqual(resolveProductOptions(101, true, mockOptions), mockOptions[101])
+  assert.equal(resolveProductOptions(999, true, mockOptions), null)
+  // 실제 응답의 productId가 목업 ID(101)와 같아도 목업 옵션을 붙이지 않는다.
+  assert.equal(resolveProductOptions(101, false, mockOptions), null)
+  assert.equal(resolveProductOptions(999, false, mockOptions), null)
 })
 
 test('기본 선택 옵션은 품절이 아닌 첫 옵션이고, 전부 품절이면 없다', () => {
