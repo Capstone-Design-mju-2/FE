@@ -10,21 +10,47 @@ type Props = {
   onClose: () => void
 }
 
+// 패널 안에서 Tab으로 이동할 수 있는 요소
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+
 // 와이어프레임 5a: 채팅 위 오른쪽 패널. 주문 API 연결 전이라 목업 옵션으로 동작한다.
 function OrderSheet({ product, onClose }: Props) {
   const titleId = useId()
+  const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
-  const { label, options } = getProductOptions(product.productId)
-  const [optionId, setOptionId] = useState(() => firstAvailableOption(options)?.optionId ?? null)
+  // null이면 옵션 정보가 없는 상품 (실제 API 모드 등)
+  const productOptions = getProductOptions(product.productId)
+  const [optionId, setOptionId] = useState(
+    () => (productOptions && firstAvailableOption(productOptions.options)?.optionId) ?? null,
+  )
   const [quantity, setQuantity] = useState(1)
   const [submitted, setSubmitted] = useState(false)
   const max = maxQuantity(product.inventory)
+  const allSoldOut = productOptions !== null && optionId === null
 
   // 열릴 때 닫기 버튼으로 포커스를 옮긴다. 닫힌 뒤 포커스 복귀는 App이 맡는다.
   useEffect(() => {
     closeRef.current?.focus()
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      // aria-modal 동안 Tab·Shift+Tab이 패널 밖으로 나가지 않게 처음·끝 요소에서 순환시킨다.
+      if (e.key !== 'Tab' || !panelRef.current) return
+      const focusable = [...panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)]
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+      const outside = !panelRef.current.contains(active)
+      if (e.shiftKey && (active === first || outside)) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && (active === last || outside)) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
@@ -33,7 +59,13 @@ function OrderSheet({ product, onClose }: Props) {
   return (
     <div className="order-sheet">
       <div className="order-sheet__backdrop" onClick={onClose} aria-hidden="true" />
-      <section className="order-sheet__panel" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <section
+        ref={panelRef}
+        className="order-sheet__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+      >
         <header className="order-sheet__header">
           <h2 id={titleId}>주문 확인</h2>
           <button ref={closeRef} type="button" className="order-sheet__close" onClick={onClose} aria-label="주문 확인 닫기">
@@ -53,27 +85,34 @@ function OrderSheet({ product, onClose }: Props) {
             </div>
           </div>
 
-          <fieldset className="order-sheet__field">
-            <legend>{label}</legend>
-            <div className="order-sheet__options">
-              {options.map((option) => (
-                <label
-                  key={option.optionId}
-                  className={`option-chip${option.soldOut ? ' option-chip--sold-out' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name={`option-${product.productId}`}
-                    value={option.optionId}
-                    checked={optionId === option.optionId}
-                    disabled={option.soldOut}
-                    onChange={() => setOptionId(option.optionId)}
-                  />
-                  <span>{option.soldOut ? `${option.name} 품절` : option.name}</span>
-                </label>
-              ))}
+          {productOptions === null ? (
+            <div className="order-sheet__field">
+              <div className="order-sheet__label">옵션</div>
+              <p className="order-sheet__note">옵션 정보를 아직 불러올 수 없어요.</p>
             </div>
-          </fieldset>
+          ) : (
+            <fieldset className="order-sheet__field">
+              <legend>{productOptions.label}</legend>
+              <div className="order-sheet__options">
+                {productOptions.options.map((option) => (
+                  <label
+                    key={option.optionId}
+                    className={`option-chip${option.soldOut ? ' option-chip--sold-out' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`option-${product.productId}`}
+                      value={option.optionId}
+                      checked={optionId === option.optionId}
+                      disabled={option.soldOut}
+                      onChange={() => setOptionId(option.optionId)}
+                    />
+                    <span>{option.soldOut ? `${option.name} 품절` : option.name}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
 
           <div className="order-sheet__row">
             <span className="order-sheet__label" id={`${titleId}-qty`}>수량</span>
@@ -112,7 +151,7 @@ function OrderSheet({ product, onClose }: Props) {
             <b>합계</b>
             <b className="order-sheet__amount">{formatPrice(product.price * quantity)}</b>
           </div>
-          {optionId === null && <p className="order-sheet__hint">모든 옵션이 품절이에요.</p>}
+          {allSoldOut && <p className="order-sheet__hint">모든 옵션이 품절이에요.</p>}
           {/* 주문 API·주문 완료 화면은 다음 단계에서 연결한다. */}
           {submitted && (
             <p className="order-sheet__hint" role="status">
@@ -122,7 +161,7 @@ function OrderSheet({ product, onClose }: Props) {
           <button
             type="button"
             className="order-sheet__submit"
-            disabled={optionId === null}
+            disabled={allSoldOut}
             onClick={() => setSubmitted(true)}
           >
             주문하기
