@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildMockOrderReceipt } from '../src/lib/order.ts'
+import { buildMockOrderReceipt, createMockOrderId } from '../src/lib/order.ts'
 
 const product = { name: '수분크림', brand: '브랜드', price: 25900,
   inventory: { status: 'IN_STOCK', quantity: 3, estimatedDeliveryDate: '2026-10-08' } }
@@ -30,4 +30,17 @@ test('옵션 없음·품절·재고 부족·잘못된 수량은 주문 완료를
   }
   assert.equal(buildMockOrderReceipt(product, null, 1, 1, 'MOCK-test'), null)
   assert.equal(buildMockOrderReceipt({ ...product, inventory: { status: 'UNKNOWN', quantity: null } }, options, 1, 1, 'MOCK-test'), null)
+})
+
+test('보안 컨텍스트 전용 API 없이 짧은 날짜별 목업 주문 번호를 만든다', () => {
+  const originalCrypto = globalThis.crypto
+  try {
+    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: {} })
+    const first = createMockOrderId(new Date(2026, 9, 8))
+    const second = createMockOrderId(new Date(2026, 9, 8))
+    assert.match(first, /^MOCK-20261008-\d{4,}$/)
+    assert.notEqual(first, second)
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: originalCrypto })
+  }
 })

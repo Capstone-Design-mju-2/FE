@@ -1,30 +1,24 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
-import { createServer } from 'vite'
+import { createMockOrderReceipt, resolveProductOptions } from '../src/lib/order.ts'
 
-test('주문 완료는 실제 API 설정에서 차단되고 목업 설정에서만 생성된다', async () => {
-  const original = process.env.VITE_USE_MOCK
-  const { products } = JSON.parse(await readFile(new URL('../src/mocks/chat-response.example.json', import.meta.url)))
-  try {
-    for (const mode of ['false', 'true']) {
-      process.env.VITE_USE_MOCK = mode
-      const server = await createServer({ server: { middlewareMode: true, hmr: false }, logLevel: 'error' })
-      try {
-        const { createMockOrder } = await server.ssrLoadModule('/src/api/order.ts')
-        const receipt = createMockOrder(products[0], 1012, 3)
-        if (mode === 'false') assert.equal(receipt, null)
-        else {
-          assert.equal(receipt.optionName, '80ml')
-          assert.equal(receipt.totalPrice, 77700)
-          assert.ok(receipt.orderId.startsWith('MOCK-'))
-          assert.notEqual(createMockOrder(products[0], 1012, 3).orderId, receipt.orderId)
-          assert.equal(createMockOrder(products[0], 1013, 1), null)
-        }
-      } finally { await server.close() }
-    }
-  } finally {
-    if (original === undefined) delete process.env.VITE_USE_MOCK
-    else process.env.VITE_USE_MOCK = original
-  }
+const { products } = JSON.parse(await readFile(new URL('../src/mocks/chat-response.example.json', import.meta.url)))
+const options = { 101: { label: '용량', options: [
+  { optionId: 1012, name: '80ml', soldOut: false },
+  { optionId: 1013, name: '100ml', soldOut: true },
+] } }
+
+test('실제 API 모드는 상품 ID가 목업과 겹쳐도 옵션·목업 완료를 만들지 않는다', () => {
+  assert.equal(resolveProductOptions(101, false, options), null)
+  assert.equal(createMockOrderReceipt(false, products[0], options[101], 1012, 3), null)
+})
+
+test('목업 모드는 선택한 옵션으로 완료하고 무효한 선택에서는 완료를 만들지 않는다', () => {
+  const receipt = createMockOrderReceipt(true, products[0], resolveProductOptions(101, true, options), 1012, 3)
+  assert.equal(receipt.optionName, '80ml')
+  assert.equal(receipt.totalPrice, 77700)
+  assert.match(receipt.orderId, /^MOCK-\d{8}-\d{4,}$/)
+  assert.notEqual(createMockOrderReceipt(true, products[0], options[101], 1012, 3).orderId, receipt.orderId)
+  assert.equal(createMockOrderReceipt(true, products[0], options[101], 1013, 1), null)
 })

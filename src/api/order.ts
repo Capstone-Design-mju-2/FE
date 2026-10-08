@@ -1,5 +1,5 @@
 import mockOptions from '../mocks/product-options.example.json'
-import { buildMockOrderReceipt, resolveProductOptions } from '../lib/order'
+import { createMockOrderReceipt, resolveProductOptions } from '../lib/order'
 import type { Product } from '../types/api'
 import type { ProductOptions } from '../types/order'
 
@@ -11,7 +11,5 @@ export function getProductOptions(productId: number): ProductOptions | null {
 }
 
 export function createMockOrder(product: Product, optionId: number | null, quantity: number) {
-  if (!useMock) return null
-  return buildMockOrderReceipt(product, getProductOptions(product.productId), optionId, quantity,
-    `MOCK-${crypto.randomUUID()}`)
+  return createMockOrderReceipt(useMock, product, getProductOptions(product.productId), optionId, quantity)
 }

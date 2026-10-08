@@ -27,6 +27,7 @@ function OrderSheet({ product, onClose }: Props) {
   )
   const [quantity, setQuantity] = useState(1)
   const [receipt, setReceipt] = useState<MockOrderReceipt | null>(null)
+  const [orderError, setOrderError] = useState(false)
   const max = maxQuantity(product.inventory)
   const allSoldOut = productOptions !== null && optionId === null
 
@@ -155,19 +156,33 @@ function OrderSheet({ product, onClose }: Props) {
               <b className="order-sheet__amount">{formatPrice(product.price * quantity)}</b>
             </div>
             {allSoldOut && <p className="order-sheet__hint">모든 옵션이 품절이에요.</p>}
-            <p className="order-sheet__hint">화면 체험용으로, 실제 주문 접수·재고 차감은 이루어지지 않아요.</p>
+            {productOptions === null && (
+              <p className="order-sheet__hint">옵션 정보와 주문 API가 준비되면 주문할 수 있어요.</p>
+            )}
+            {orderError && (
+              <p className="order-sheet__hint order-sheet__error" role="alert">
+                주문을 완료하지 못했어요. 다시 시도해 주세요.
+              </p>
+            )}
             <button
               type="button"
               className="order-sheet__submit"
               disabled={productOptions === null || allSoldOut}
               onClick={() => {
-                if (!receipt) setReceipt(createMockOrder(product, optionId, quantity))
+                setOrderError(false)
+                try {
+                  const result = createMockOrder(product, optionId, quantity)
+                  if (result) setReceipt(result)
+                  else setOrderError(true)
+                } catch {
+                  setOrderError(true)
+                }
               }}
             >
               주문하기
             </button>
           </footer>
-          </>}
+        </>}
       </section>
     </div>
   )

@@ -211,6 +211,8 @@
   margin: 0;
 }
 
+.order-sheet__error { color: var(--color-accent-dark); }
+
 .order-sheet__total {
   display: flex;
   justify-content: space-between;

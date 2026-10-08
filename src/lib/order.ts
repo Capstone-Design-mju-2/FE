@@ -47,3 +47,22 @@ export function buildMockOrderReceipt(
     estimatedDeliveryDate: product.inventory.estimatedDeliveryDate,
   }
 }
+
+let nextMockOrderNumber = 0
+
+// 시연 중에만 쓰는 번호. 보안 컨텍스트가 아닌 휴대폰의 LAN 접속에서도 생성할 수 있다.
+export function createMockOrderId(now = new Date()): string {
+  const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+  nextMockOrderNumber += 1
+  return `MOCK-${date}-${String(nextMockOrderNumber).padStart(4, '0')}`
+}
+
+export function createMockOrderReceipt(
+  useMock: boolean, product: Product, options: ProductOptions | null,
+  optionId: number | null, quantity: number,
+): MockOrderReceipt | null {
+  if (!useMock) return null
+  // 유효한 주문인지 먼저 확인한 뒤 번호를 할당한다.
+  const receipt = buildMockOrderReceipt(product, options, optionId, quantity, '')
+  return receipt ? { ...receipt, orderId: createMockOrderId() } : null
+}
