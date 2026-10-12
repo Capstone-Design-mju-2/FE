@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { sendChat } from './api/chat'
 import { ApiRequestError } from './api/client'
 import ChatInput from './components/ChatInput'
+import Home from './components/Home'
 import OrderSheet from './components/OrderSheet'
 import ProductCard from './components/ProductCard'
 import type { ChatResponse, Product } from './types/api'
@@ -20,7 +21,14 @@ const EXAMPLES = [
 
 let nextId = 0
 
+function currentScreen(): 'home' | 'chat' {
+  if (window.location.hash === '#home') return 'home'
+  if (window.location.hash === '#chat' || new URLSearchParams(window.location.search).has('mock')) return 'chat'
+  return 'home'
+}
+
 function App() {
+  const [screen, setScreen] = useState(currentScreen)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -28,6 +36,21 @@ function App() {
   const orderOpenerRef = useRef<HTMLElement | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const onNavigate = () => {
+      const next = currentScreen()
+      setScreen(next)
+      if (next === 'home') setOrderProduct(null)
+    }
+    window.addEventListener('hashchange', onNavigate)
+    return () => window.removeEventListener('hashchange', onNavigate)
+  }, [])
+
+  const showChat = () => {
+    window.location.hash = 'chat'
+    setScreen('chat')
+  }
 
   // 패널이 열리면 채팅 화면이 inert가 되면서 포커스가 풀리므로, 누른 버튼을 클릭 시점에 기억해 둔다.
   const openOrder = (product: Product) => {
@@ -76,6 +99,12 @@ function App() {
     ask(text)
   }
 
+  const askFromHome = (text: string) => {
+    if (loading) return
+    showChat()
+    send(text)
+  }
+
   // 같은 질문을 말풍선을 다시 쌓지 않고 한 번 더 보낸다.
   const retry = (errorId: number, question: string) => {
     if (loading) return
@@ -97,17 +126,24 @@ function App() {
       ? `검색이 완료됐어요. 상품 ${latest.response.products.length}개를 찾았어요.`
       : ''
 
+  if (screen === 'home') {
+    return <Home examples={EXAMPLES} loading={loading} onAsk={askFromHome} onOpenChat={showChat} />
+  }
+
   return (
     <>
       {/* 주문 확인 패널이 열려 있는 동안 채팅 화면은 포커스·클릭을 받지 않는다. */}
       <div className="chat" inert={orderProduct !== null}>
         <header className="chat__header">
           <div className="chat__header-inner">
-            <span className="chat__brand">PeauPick</span>
-            <button type="button" className="chat__reset" onClick={resetChat}
-              disabled={loading || (messages.length === 0 && input.length === 0)}>
-              새 대화
-            </button>
+            <a className="chat__brand" href="#home">PeauPick</a>
+            <div className="chat__header-actions">
+              <a href="#home">홈</a>
+              <button type="button" className="chat__reset" onClick={resetChat}
+                disabled={loading || (messages.length === 0 && input.length === 0)}>
+                새 대화
+              </button>
+            </div>
           </div>
         </header>
 
