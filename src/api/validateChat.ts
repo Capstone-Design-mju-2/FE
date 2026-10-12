@@ -16,7 +16,8 @@ export function isChatResponse(value: unknown): value is ChatResponse {
       return finiteNumber(product.productId) && typeof product.name === 'string' &&
         typeof product.brand === 'string' && finiteNumber(product.price) &&
         (product.reason === null || typeof product.reason === 'string') &&
-        Array.isArray(product.evidence) && product.evidence.every((review: unknown) =>
+        Array.isArray(product.evidence) && product.evidence.length > 0 &&
+        product.evidence.every((review: unknown) =>
           record(review) && finiteNumber(review.reviewId) &&
           finiteNumber(review.rating) && typeof review.excerpt === 'string') &&
         ['IN_STOCK', 'OUT_OF_STOCK', 'UNKNOWN'].includes(String(inventory.status)) &&

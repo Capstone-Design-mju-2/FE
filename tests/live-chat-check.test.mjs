@@ -40,6 +40,11 @@ test('실제 연동 점검 명령은 정상·재고 장애·검색 장애·빈 �
       })) }))
       return
     }
+    if (message === 'no-evidence') {
+      response.end(JSON.stringify({ ...stocked, products: stocked.products.map((product, index) =>
+        index === 0 ? { ...product, evidence: [] } : product) }))
+      return
+    }
     response.end(JSON.stringify(message === 'mixed' ? example : stocked))
   })
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
@@ -56,9 +61,10 @@ test('실제 연동 점검 명령은 정상·재고 장애·검색 장애·빈 �
     await assert.rejects(check('normal', 'mixed'), /UNKNOWN 재고가 있습니다/)
     await assert.rejects(check('unknown', 'normal'), /모든 재고 UNKNOWN 예상/)
     await assert.rejects(check('error', 'bad-error'), /HTTP 502 PRODUCT_SEARCH_FAILED 예상/)
+    await assert.rejects(check('normal', 'no-evidence'), /리뷰 근거가 없는 상품이 있습니다/)
     assert.ok(requests.every(({ method, url: path }) => method === 'POST' && path === '/api/v1/chat'))
     assert.deepEqual(requests.map(({ message }) => message), [
-      'normal', 'unknown', 'error', 'empty', 'unknown', 'mixed', 'normal', 'bad-error',
+      'normal', 'unknown', 'error', 'empty', 'unknown', 'mixed', 'normal', 'bad-error', 'no-evidence',
     ])
   } finally {
     server.close()
