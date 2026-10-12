@@ -22,7 +22,11 @@
   gap: 16px;
 }
 
-.chat__brand { letter-spacing: -0.04em; }
+.chat__brand { color: var(--color-text); letter-spacing: -0.04em; text-decoration: none; }
+
+.chat__header-actions { display: flex; align-items: center; gap: 12px; }
+.chat__header-actions a { color: var(--color-text-muted); font-size: 14px; font-weight: 500; text-decoration: none; }
+.chat__header-actions a:hover { color: var(--color-text); }
 
 .chat__reset {
   min-height: 44px;
