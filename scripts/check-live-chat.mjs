@@ -49,6 +49,11 @@ async function main() {
     return
   }
 
+  if (response.ok && Array.isArray(body?.products) && body.products.some((product) =>
+    product && typeof product === 'object' &&
+    Array.isArray(product.evidence) && product.evidence.length === 0)) {
+    throw new Error('리뷰 근거가 없는 상품이 있습니다.')
+  }
   if (!response.ok || !isChatResponse(body)) {
     throw new Error(`채팅 계약 응답 예상, 실제 HTTP ${response.status}: ${JSON.stringify(body)}`)
   }
@@ -56,9 +61,6 @@ async function main() {
     if (body.products.length !== 0) throw new Error(`상품 0개 예상, 실제 ${body.products.length}개`)
   } else {
     if (body.products.length === 0) throw new Error('상품 카드 1개 이상 예상, 실제 0개')
-    if (body.products.some((product) => product.evidence.length === 0)) {
-      throw new Error('리뷰 근거가 없는 상품이 있습니다.')
-    }
     const statuses = body.products.map((product) => product.inventory.status)
     if (values.expect === 'unknown' && statuses.some((status) => status !== 'UNKNOWN')) {
       throw new Error(`모든 재고 UNKNOWN 예상, 실제 ${statuses.join(', ')}`)
