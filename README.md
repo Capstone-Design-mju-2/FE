@@ -93,6 +93,7 @@ VITE_USE_MOCK=false
 | `npm run dev` | 개발 서버 |
 | `npm run lint` | ESLint |
 | `npm test` | 로컬 HTTP 요청·장애 응답·응답 구조, 배송일 표시, 주문 수량·옵션 규칙 회귀 테스트 (Node 24) |
+| `npm run check:live-chat -- --question "검색어" --expect normal` | 실행 중인 실제 BE의 채팅 응답 점검 |
 | `npm run build` | 타입 검사 + 빌드 |
 | `npm run preview` | 빌드 결과 미리 보기 |
 
@@ -107,6 +108,22 @@ PR과 `main` 푸시마다 CI가 `lint`, `build`, `test`를 돌린다.
 3. catalog-service를 중지하고 질문한다. 서버의 `code`, `message`와 다시 시도 버튼이 표시되는지 확인한다.
 4. 서비스를 복구한 뒤 다시 시도를 누른다. 같은 질문으로 카드가 표시되는지 확인한다.
 5. 검색 결과가 없는 질문으로 결과 0개 안내를 확인한다.
+
+실제 BE가 준비되면 다음 명령으로 개발 프록시를 통과한 응답을 반복 확인할 수 있다. `--question`에는 **적재된 실제 상품이 검색되는 질문**을 넣는다. 기본 주소는 Vite 개발 서버 `http://localhost:5173`이며, 다른 주소라면 `--url`로 지정한다. 이 명령은 목업 설정과 무관하게 `/api`를 호출한다. 브라우저 화면을 확인할 때는 `VITE_USE_MOCK=false`로 실행한다.
+
+```bash
+npm run check:live-chat -- --question "수분크림" --expect normal
+# order-service를 중지한 뒤 같은 질문
+npm run check:live-chat -- --question "수분크림" --expect unknown
+# order-service를 복구하고 catalog-service를 중지한 뒤
+npm run check:live-chat -- --question "수분크림" --expect error
+# 두 서비스를 복구한 뒤 다시 정상 응답 확인
+npm run check:live-chat -- --question "수분크림" --expect normal
+# 검색은 실행되지만 가격 조건에 맞는 결과가 없는 질문
+npm run check:live-chat -- --question "수분크림 100원 이하" --expect empty
+```
+
+상품 종류나 효능 단어가 없는 질문은 BE가 catalog 검색 없이 빈 결과를 돌려줄 수 있으므로 검색 결과 0개 검증에는 쓰지 않는다. 위 예시는 실제 가격 데이터에 따라 조정한다. 이 명령은 HTTP 응답의 계약·상품 수·리뷰 근거·재고 상태·오류 본문을 확인한다. 서비스 중지·복구와 브라우저 카드·오류 화면 확인은 위 절차대로 별도 수행해야 한다. 현재 로컬에 BE가 실행되지 않으면 완료 조건을 통과한 것으로 기록하지 않는다.
 
 `npm test`는 임시 로컬 HTTP 서버와 응답 fixture로 FE의 전송·오류 처리를 검증한다. 실제 BE 연동이나 브라우저 화면 검증을 대신하지 않는다. 개발 프록시는 `npm run dev`에서 적용되며, 배포 환경에서는 `/api`를 BE로 전달하는 별도 구성이 필요하다.
 
