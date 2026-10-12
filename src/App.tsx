@@ -3,9 +3,11 @@ import { sendChat } from './api/chat'
 import { ApiRequestError } from './api/client'
 import ChatInput from './components/ChatInput'
 import Home from './components/Home'
+import MyPage from './components/MyPage'
 import OrderSheet from './components/OrderSheet'
 import ProductCard from './components/ProductCard'
 import type { ChatResponse, Product } from './types/api'
+import { screenForLocation } from './lib/navigation'
 import './App.css'
 
 type Message =
@@ -16,16 +18,12 @@ type Message =
 const EXAMPLES = [
   '건성 피부에 끈적이지 않는 수분크림 중 내일 도착 가능한 거',
   '3만 원 이하 순한 선크림',
-  '요즘 인기 있는 쿨톤 립',
+  '진정 토너 추천해 줘',
 ]
 
 let nextId = 0
 
-function currentScreen(): 'home' | 'chat' {
-  if (window.location.hash === '#home') return 'home'
-  if (window.location.hash === '#chat' || new URLSearchParams(window.location.search).has('mock')) return 'chat'
-  return 'home'
-}
+const currentScreen = () => screenForLocation(window.location.hash, window.location.search)
 
 function App() {
   const [screen, setScreen] = useState(currentScreen)
@@ -129,6 +127,7 @@ function App() {
   if (screen === 'home') {
     return <Home examples={EXAMPLES} loading={loading} onAsk={askFromHome} onOpenChat={showChat} />
   }
+  if (screen === 'my') return <MyPage />
 
   return (
     <>
@@ -139,6 +138,7 @@ function App() {
             <a className="chat__brand" href="#home">PeauPick</a>
             <div className="chat__header-actions">
               <a href="#home">홈</a>
+              <a href="#my">마이페이지</a>
               <button type="button" className="chat__reset" onClick={resetChat}
                 disabled={loading || (messages.length === 0 && input.length === 0)}>
                 새 대화

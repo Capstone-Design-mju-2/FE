@@ -42,10 +42,11 @@ function Home({ examples, loading, onAsk, onOpenChat }: Props) {
     <div className="home">
       <header className="home__header">
         <div className="home__header-inner">
-          <a className="home__brand" href="#home" aria-current="page">PeauPick</a>
+          <a className="home__brand" href="#home">PeauPick</a>
           <nav className="home__nav" aria-label="주요 메뉴">
             <a href="#home" aria-current="page">홈</a>
             <a href="#chat">AI 상담</a>
+            <a href="#my">마이페이지</a>
           </nav>
         </div>
       </header>
@@ -70,15 +71,15 @@ function Home({ examples, loading, onAsk, onOpenChat }: Props) {
         </section>
 
         <div className="home__content">
-          <section className="home__categories" aria-label="카테고리">
+          <section className="home__categories" aria-label="카테고리별 상품 보기 준비 중">
             {categories.map(([name, tint]) => (
-              <button key={name} type="button" onClick={() => ask(`${name} 추천해 줘`)} disabled={loading}
-                aria-label={`${name} 상품 AI에게 묻기`}>
+              <div key={name} className="home__category" aria-label={`${name} 상품 보기 준비 중`}>
                 <span className="home__category-icon" style={{ background: tint }} aria-hidden="true" />
                 <span>{name}</span>
-              </button>
+              </div>
             ))}
           </section>
+          <p className="home__category-note">카테고리별 상품 보기는 API가 준비되면 열립니다.</p>
 
           <section className="home__section" aria-labelledby="home-recommend-title">
             <div className="home__section-head">
@@ -104,7 +105,7 @@ function Home({ examples, loading, onAsk, onOpenChat }: Props) {
             <div className="home__section-head home__section-head--rank">
               <div>
                 <h2 id="home-ranking-title">지금 인기 랭킹</h2>
-                <p>순위와 상품 정보는 디자인 시연용 예시예요.</p>
+                <p>순위와 상품 정보는 실제 판매·인기 데이터가 아닌 가상 예시예요.</p>
               </div>
               <div className="home__rank-tabs" role="group" aria-label="랭킹 카테고리">
                 {(Object.keys(rankingIds) as (keyof typeof rankingIds)[]).map((tab) => (
@@ -134,10 +135,6 @@ function HomeProductCard({ product, rank }: {
   product: HomeProduct
   rank?: number
 }) {
-  const discount = product.originalPrice > product.price
-    ? Math.round((1 - product.price / product.originalPrice) * 100)
-    : 0
-
   return (
     <article className="home-product">
       <span className="home-product__image" style={{ background: product.tint }}>
@@ -147,11 +144,10 @@ function HomeProductCard({ product, rank }: {
       <span className="home-product__brand">{product.brand}</span>
       <span className="home-product__name">{product.name}</span>
       <span className="home-product__prices">
-        {discount > 0 && <strong className="home-product__discount">{discount}%</strong>}
         <strong>{formatPrice(product.price)}</strong>
-        {discount > 0 && <s>{formatPrice(product.originalPrice)}</s>}
       </span>
       <span className="home-product__reviews">★ {product.rating} ({product.reviewCount.toLocaleString('ko-KR')})</span>
+      <span className="home-product__sample">시안 예시 · 상세 화면 없음</span>
     </article>
   )
 }
