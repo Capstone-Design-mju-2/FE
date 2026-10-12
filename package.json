@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "node --test tests/*.test.mjs",
+    "check:live-chat": "node scripts/check-live-chat.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
