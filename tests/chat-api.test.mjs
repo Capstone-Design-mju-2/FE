@@ -53,6 +53,8 @@ test('잘못된 응답은 렌더링 전에 거부하고 reason은 null/문자열
   for (const invalid of [null, {}, { answer: '답변', products: null },
     { ...fixture, products: [null] },
     { ...fixture, products: [{ ...fixture.products[0], evidence: [null] }] },
+    { ...fixture, products: [{ ...fixture.products[0], evidence: [] }] },
+    { ...fixture, products: [{ ...fixture.products[0], reason: '근거 없는 추천', evidence: [] }] },
     { ...fixture, products: [{ ...fixture.products[0], inventory: { status: 'NOT_FOUND' } }] },
   ]) assert.equal(isChatResponse(invalid), false)
   // 계약 위반 카드를 조용히 제외하지 않고 응답 전체를 거부한다.
