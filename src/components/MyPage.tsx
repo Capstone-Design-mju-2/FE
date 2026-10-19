@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { formatPrice } from '../lib/format'
 import { homeProducts } from '../mocks/home-products'
+import type { MockOrderReceipt } from '../types/order'
 import './MyPage.css'
 
 const MUSINSA_BEAUTY = 'https://www.musinsa.com/main/beauty'
 const byId = (id: number) => homeProducts.find((product) => product.id === id)
 const sampleOrders = [
-  { id: 'DEMO-001', productId: 1, date: '2026.10.08', option: '50ml', status: '배송 중', actions: ['배송 조회', '교환·반품 신청', '리뷰 쓰기'] },
-  { id: 'DEMO-002', productId: 4, date: '2026.10.06', option: '50ml', status: '주문 접수', actions: ['주문 취소'] },
+  { id: 'DEMO-001', productId: 1, date: '2026.10.08', option: '50ml', status: '배송 중' },
+  { id: 'DEMO-002', productId: 4, date: '2026.10.06', option: '50ml', status: '주문 접수' },
 ] as const
 
-function MyPage() {
+function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
   const [tab, setTab] = useState<'orders' | 'restock'>('orders')
   const [alertOn, setAlertOn] = useState(true)
   const restockProduct = byId(2)
@@ -32,19 +33,33 @@ function MyPage() {
           <p className="my-page__eyebrow">시연용 목업</p>
           <strong>마이페이지</strong>
           <nav aria-label="마이페이지 메뉴">
-            <button type="button" aria-current={tab === 'orders' ? 'page' : undefined}
+            <button type="button" aria-pressed={tab === 'orders'}
               onClick={() => setTab('orders')}>주문/배송 조회</button>
-            <button type="button" aria-current={tab === 'restock' ? 'page' : undefined}
+            <button type="button" aria-pressed={tab === 'restock'}
               onClick={() => setTab('restock')}>재입고 알림</button>
           </nav>
         </aside>
 
         <div className="my-page__content">
           <h1>{tab === 'orders' ? '주문/배송 조회' : '재입고 알림'}</h1>
-          <p className="my-page__notice">이 화면의 주문·배송·재입고 정보는 디자인 시연용 가상 데이터입니다. 실제 주문이나 알림 신청 내역이 아닙니다.</p>
+          <p className="my-page__notice">체험 주문과 예시 주문은 시연용 데이터입니다. 실제 결제·배송·알림 신청 내역이 아닙니다.</p>
 
           {tab === 'orders' ? (
             <div className="my-page__cards">
+              {trialOrders.map((order) => (
+                <article className="my-page__card" key={order.orderId}>
+                  <div className="my-page__card-head"><b>이번 체험 주문</b><span>체험 주문번호 {order.orderId}</span></div>
+                  <div className="my-page__card-body">
+                    <div className="my-page__thumb" aria-hidden="true" />
+                    <div className="my-page__details">
+                      <strong className="my-page__status">주문 완료 · 체험 상태</strong>
+                      <span>{order.brand}</span>
+                      <b>{order.productName}</b>
+                      <span>{order.optionName} · {order.quantity}개 · {formatPrice(order.totalPrice)}</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
               {sampleOrders.map((order) => {
                 const product = byId(order.productId)
                 if (!product) return null
@@ -60,10 +75,8 @@ function MyPage() {
                         <span>{order.option} · 1개 · {formatPrice(product.price)}</span>
                       </div>
                       <div className="my-page__actions">
-                        {order.actions.map((action) => (
-                          <a key={action} href={MUSINSA_BEAUTY} target="_blank" rel="noopener noreferrer"
-                            aria-label={`${action} — 무신사 뷰티 새 창 열기`}>{action} ↗</a>
-                        ))}
+                        <a href={MUSINSA_BEAUTY} target="_blank" rel="noopener noreferrer">무신사 뷰티 열기 ↗</a>
+                        <span>외부 페이지로 이동하며, 이 주문과 연결되지 않습니다.</span>
                       </div>
                     </div>
                   </article>

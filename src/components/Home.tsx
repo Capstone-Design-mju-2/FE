@@ -73,7 +73,7 @@ function Home({ examples, loading, onAsk, onOpenChat }: Props) {
         <div className="home__content">
           <section className="home__categories" aria-label="카테고리별 상품 보기 준비 중">
             {categories.map(([name, tint]) => (
-              <div key={name} className="home__category" aria-label={`${name} 상품 보기 준비 중`}>
+              <div key={name} className="home__category">
                 <span className="home__category-icon" style={{ background: tint }} aria-hidden="true" />
                 <span>{name}</span>
               </div>

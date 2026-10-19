@@ -5,7 +5,7 @@
 .my-page__eyebrow { margin: 0; color: var(--color-accent); font-size: 13px; font-weight: 600; }
 .my-page__side nav { display: grid; gap: 4px; padding-top: 16px; border-top: 1px solid var(--color-border); }
 .my-page__side nav button { padding: 12px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-size: 15px; }
-.my-page__side nav button[aria-current] { background: #f1ebe4; font-weight: 700; }
+.my-page__side nav button[aria-pressed="true"] { background: #f1ebe4; font-weight: 700; }
 .my-page__content { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .my-page__content h1 { margin: 0; font-size: 28px; }
 .my-page__notice { margin: 0; padding: 14px 16px; border-radius: 10px; background: #f4eee7; color: #5b5049; font-size: 14px; line-height: 1.5; }
@@ -21,6 +21,7 @@
 .my-page__actions { display: flex; flex-direction: column; gap: 6px; min-width: 150px; }
 .my-page__actions a { display: grid; place-items: center; min-height: 38px; padding: 6px 10px; border: 1px solid #e1d8ce; border-radius: 8px; color: var(--color-text); text-decoration: none; font-size: 14px; text-align: center; }
 .my-page__actions a:hover { border-color: var(--color-text); }
+.my-page__actions span { color: var(--color-text-muted); font-size: 12px; line-height: 1.4; }
 .my-page__description { margin: 0; color: var(--color-text-muted); font-size: 14px; }
 .my-page__toggle { min-height: 38px; padding: 0 14px; border: 1px solid var(--color-text); border-radius: 8px; background: var(--color-text); color: white; font-size: 14px; }
 .my-page__toggle[aria-pressed="false"] { border-color: var(--color-border); background: white; color: var(--color-text-muted); }

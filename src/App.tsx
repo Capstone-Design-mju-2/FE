@@ -7,6 +7,7 @@ import MyPage from './components/MyPage'
 import OrderSheet from './components/OrderSheet'
 import ProductCard from './components/ProductCard'
 import type { ChatResponse, Product } from './types/api'
+import type { MockOrderReceipt } from './types/order'
 import { screenForLocation } from './lib/navigation'
 import './App.css'
 
@@ -31,6 +32,7 @@ function App() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [orderProduct, setOrderProduct] = useState<Product | null>(null)
+  const [trialOrders, setTrialOrders] = useState<MockOrderReceipt[]>([])
   const orderOpenerRef = useRef<HTMLElement | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -39,7 +41,10 @@ function App() {
     const onNavigate = () => {
       const next = currentScreen()
       setScreen(next)
-      if (next === 'home') setOrderProduct(null)
+      if (next !== 'chat') {
+        orderOpenerRef.current = null
+        setOrderProduct(null)
+      }
     }
     window.addEventListener('hashchange', onNavigate)
     return () => window.removeEventListener('hashchange', onNavigate)
@@ -127,7 +132,7 @@ function App() {
   if (screen === 'home') {
     return <Home examples={EXAMPLES} loading={loading} onAsk={askFromHome} onOpenChat={showChat} />
   }
-  if (screen === 'my') return <MyPage />
+  if (screen === 'my') return <MyPage trialOrders={trialOrders} />
 
   return (
     <>
@@ -215,7 +220,8 @@ function App() {
           <ChatInput inputRef={inputRef} value={input} disabled={loading} onChange={setInput} onSubmit={send} />
         </footer>
       </div>
-      {orderProduct && <OrderSheet product={orderProduct} onClose={closeOrder} />}
+      {orderProduct && <OrderSheet product={orderProduct} onClose={closeOrder}
+        onOrderComplete={(receipt) => setTrialOrders((orders) => [receipt, ...orders])} />}
     </>
   )
 }
