@@ -7,9 +7,10 @@ type Props = {
   disabled: boolean
   onChange: (value: string) => void
   onSubmit: (value: string) => void
+  submitLabel?: string
 }
 
-function ChatInput({ inputRef, value, disabled, onChange, onSubmit }: Props) {
+function ChatInput({ inputRef, value, disabled, onChange, onSubmit, submitLabel = '보내기' }: Props) {
   const composing = useRef(false)
   const wasDisabled = useRef(disabled)
 
@@ -43,7 +44,7 @@ function ChatInput({ inputRef, value, disabled, onChange, onSubmit }: Props) {
         aria-label="질문 입력"
       />
       <button type="submit" disabled={disabled || !value.trim()}>
-        보내기
+        {submitLabel}
       </button>
     </form>
   )
