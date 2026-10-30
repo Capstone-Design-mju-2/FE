@@ -10,6 +10,11 @@ export function getProductOptions(productId: number): ProductOptions | null {
   return resolveProductOptions(productId, useMock, mockOptions as Record<string, ProductOptions>)
 }
 
+// 실제 옵션 조회 경로는 BE 계약 확정 후 연결한다. 호출자는 로딩·실패 상태를 처리한다.
+export async function loadProductOptions(productId: number): Promise<ProductOptions | null> {
+  return getProductOptions(productId)
+}
+
 export function createMockOrder(product: Product, optionId: number | null, quantity: number) {
   return createMockOrderReceipt(useMock, product, getProductOptions(product.productId), optionId, quantity)
 }
