@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { createMockOrder, getProductOptions } from '../api/order'
+import { createMockOrder, loadProductOptions } from '../api/order'
 import OrderComplete from './OrderComplete'
-import type { MockOrderReceipt } from '../types/order'
+import type { MockOrderReceipt, ProductOptions } from '../types/order'
 import { formatDelivery, formatPrice } from '../lib/format'
 import { clampQuantity, firstAvailableOption, maxQuantity } from '../lib/order'
 import type { Product } from '../types/api'
@@ -21,16 +21,56 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
   const titleId = useId()
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
-  // null이면 옵션 정보가 없는 상품 (실제 API 모드 등)
-  const productOptions = getProductOptions(product.productId)
-  const [optionId, setOptionId] = useState(
-    () => (productOptions && firstAvailableOption(productOptions.options)?.optionId) ?? null,
-  )
+  const [productOptions, setProductOptions] = useState<ProductOptions | null>(null)
+  const [optionStatus, setOptionStatus] = useState<'loading' | 'ready' | 'unavailable' | 'error'>('loading')
+  const [optionLoadAttempt, setOptionLoadAttempt] = useState(0)
+  const [optionId, setOptionId] = useState<number | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [receipt, setReceipt] = useState<MockOrderReceipt | null>(null)
-  const [orderError, setOrderError] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const submittingRef = useRef(false)
   const max = maxQuantity(product.inventory)
   const allSoldOut = productOptions !== null && optionId === null
+
+  useEffect(() => {
+    let active = true
+    loadProductOptions(product.productId).then((options) => {
+      if (!active) return
+      setProductOptions(options)
+      setOptionId(options ? firstAvailableOption(options.options)?.optionId ?? null : null)
+      setOptionStatus(options ? 'ready' : 'unavailable')
+    }).catch(() => {
+      if (active) setOptionStatus('error')
+    })
+    return () => { active = false }
+  }, [product.productId, optionLoadAttempt])
+
+  const retryOptionLoad = () => {
+    setOptionStatus('loading')
+    setOptionLoadAttempt((attempt) => attempt + 1)
+  }
+
+  const submit = async () => {
+    if (submittingRef.current || !productOptions || optionId === null) return
+    submittingRef.current = true
+    setSubmitting(true)
+    setOrderError(null)
+    try {
+      const result = await Promise.resolve(createMockOrder(product, optionId, quantity))
+      if (!result) {
+        setOrderError('주문을 완료하지 못했어요. 선택한 옵션과 수량을 확인하고 다시 시도해 주세요.')
+        return
+      }
+      setReceipt(result)
+      onOrderComplete(result)
+    } catch {
+      setOrderError('주문을 완료하지 못했어요. 선택값은 유지됩니다. 다시 시도해 주세요.')
+    } finally {
+      submittingRef.current = false
+      setSubmitting(false)
+    }
+  }
 
   // 열릴 때 닫기 버튼으로 포커스를 옮긴다. 닫힌 뒤 포커스 복귀는 App이 맡는다.
   useEffect(() => {
@@ -90,10 +130,17 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
               </div>
             </div>
 
-            {productOptions === null ? (
+            {optionStatus === 'loading' ? (
+              <div className="order-sheet__field" role="status">옵션을 불러오는 중이에요.</div>
+            ) : optionStatus === 'error' ? (
+              <div className="order-sheet__field">
+                <p className="order-sheet__note" role="alert">옵션을 불러오지 못했어요.</p>
+                <button type="button" className="order-sheet__retry" onClick={retryOptionLoad}>옵션 다시 불러오기</button>
+              </div>
+            ) : productOptions === null ? (
               <div className="order-sheet__field">
                 <div className="order-sheet__label">옵션</div>
-                <p className="order-sheet__note">옵션 정보를 아직 불러올 수 없어요.</p>
+                <p className="order-sheet__note">옵션 조회 API가 준비되면 주문할 수 있어요.</p>
               </div>
             ) : (
               <fieldset className="order-sheet__field">
@@ -109,7 +156,7 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
                         name={`option-${product.productId}`}
                         value={option.optionId}
                         checked={optionId === option.optionId}
-                        disabled={option.soldOut}
+                        disabled={option.soldOut || submitting}
                         onChange={() => setOptionId(option.optionId)}
                       />
                       <span>{option.soldOut ? `${option.name} 품절` : option.name}</span>
@@ -125,7 +172,7 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => clampQuantity(q - 1, max))}
-                  disabled={quantity <= 1}
+                  disabled={quantity <= 1 || submitting}
                   aria-label="수량 줄이기"
                 >
                   −
@@ -134,7 +181,7 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => clampQuantity(q + 1, max))}
-                  disabled={quantity >= max}
+                  disabled={quantity >= max || submitting}
                   aria-label="수량 늘리기"
                 >
                   +
@@ -157,32 +204,18 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
               <b className="order-sheet__amount">{formatPrice(product.price * quantity)}</b>
             </div>
             {allSoldOut && <p className="order-sheet__hint">모든 옵션이 품절이에요.</p>}
-            {productOptions === null && (
-              <p className="order-sheet__hint">옵션 정보와 주문 API가 준비되면 주문할 수 있어요.</p>
-            )}
-            {orderError && (
+            {orderError !== null && (
               <p className="order-sheet__hint order-sheet__error" role="alert">
-                주문을 완료하지 못했어요. 다시 시도해 주세요.
+                {orderError}
               </p>
             )}
             <button
               type="button"
               className="order-sheet__submit"
-              disabled={productOptions === null || allSoldOut}
-              onClick={() => {
-                setOrderError(false)
-                try {
-                  const result = createMockOrder(product, optionId, quantity)
-                  if (result) {
-                    setReceipt(result)
-                    onOrderComplete(result)
-                  } else setOrderError(true)
-                } catch {
-                  setOrderError(true)
-                }
-              }}
+              disabled={productOptions === null || allSoldOut || submitting}
+              onClick={submit}
             >
-              주문하기
+              {submitting ? '주문 요청 중…' : '주문하기'}
             </button>
           </footer>
         </>}

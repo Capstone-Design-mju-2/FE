@@ -3,25 +3,29 @@ import type { ApiError } from '../types/api'
 export class ApiRequestError extends Error {
   readonly status: number
   readonly code: string
+  readonly details: unknown
 
-  constructor(status: number, body: ApiError) {
+  constructor(status: number, body: ApiError, details: unknown = body) {
     super(body.message)
     this.status = status
     this.code = body.code
+    this.details = details
   }
 }
 
 const TIMEOUT_MS = 90_000
 
-// 개발 중에는 vite.config.ts의 프록시가 /api 요청을 agent-service로 넘긴다.
-export async function postJson<T>(path: string, body: unknown): Promise<T> {
+// 개발 중 요청 대상은 vite.config.ts의 경로별 프록시가 결정한다.
+export async function postJson<T>(
+  path: string, body: unknown, { timeoutMs = TIMEOUT_MS }: { timeoutMs?: number } = {},
+): Promise<T> {
   let res: Response
   try {
     res = await fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     })
   } catch (e) {
     if (e instanceof DOMException && e.name === 'TimeoutError') {
@@ -41,7 +45,7 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
     throw new ApiRequestError(res.status, {
       code: typeof error?.code === 'string' ? error.code : 'UNKNOWN_ERROR',
       message: typeof error?.message === 'string' ? error.message : '잠시 후 다시 시도해 주세요.',
-    })
+    }, error)
   }
 
   try {

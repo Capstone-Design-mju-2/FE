@@ -23,3 +23,21 @@ export type MockOrderReceipt = {
   totalPrice: number
   estimatedDeliveryDate: string | null
 }
+
+// BE docs/API.md의 주문 생성 계약. 옵션 조회 계약은 아직 정해지지 않았다.
+export type CreateOrderRequest = {
+  ordererKey: string
+  items: { productId: number; optionKey: string; quantity: number }[]
+}
+
+export type CreateOrderResponse = {
+  orderId: number
+  totalPrice: number
+  items: {
+    productId: number
+    optionKey: string
+    name: string
+    unitPrice: number
+    quantity: number
+  }[]
+}
