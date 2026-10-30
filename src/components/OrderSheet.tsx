@@ -156,7 +156,7 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
                         name={`option-${product.productId}`}
                         value={option.optionId}
                         checked={optionId === option.optionId}
-                      disabled={option.soldOut || submitting}
+                        disabled={option.soldOut || submitting}
                         onChange={() => setOptionId(option.optionId)}
                       />
                       <span>{option.soldOut ? `${option.name} 품절` : option.name}</span>

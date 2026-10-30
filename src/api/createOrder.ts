@@ -5,6 +5,9 @@ const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
 const nonnegativeInteger = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+const ORDER_TIMEOUT_MS = 15_000
+const UNKNOWN_RESULT_MESSAGE =
+  '주문 처리 여부를 확인하지 못했어요. 중복 주문을 피하려면 지금은 다시 주문하지 마세요.'
 
 function isCreateOrderResponse(value: unknown): value is CreateOrderResponse {
   return record(value) && nonnegativeInteger(value.orderId) &&
@@ -22,11 +25,22 @@ export async function createOrder(
   request: CreateOrderRequest,
   endpoint = '/api/v1/orders',
 ): Promise<CreateOrderResponse> {
-  const response = await postJson<unknown>(endpoint, request)
+  let response: unknown
+  try {
+    response = await postJson<unknown>(endpoint, request, { timeoutMs: ORDER_TIMEOUT_MS })
+  } catch (error) {
+    if (error instanceof ApiRequestError &&
+      (['TIMEOUT', 'NETWORK_ERROR', 'INVALID_RESPONSE'].includes(error.code) || error.status >= 500)) {
+      throw new ApiRequestError(error.status, {
+        code: error.code, message: UNKNOWN_RESULT_MESSAGE,
+      }, error.details)
+    }
+    throw error
+  }
   if (!isCreateOrderResponse(response)) {
     throw new ApiRequestError(201, {
       code: 'INVALID_RESPONSE',
-      message: '주문 응답을 확인하지 못했어요. 주문 내역을 확인한 뒤 다시 시도해 주세요.',
+      message: UNKNOWN_RESULT_MESSAGE,
     })
   }
   return response
