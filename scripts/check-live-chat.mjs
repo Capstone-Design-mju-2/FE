@@ -34,7 +34,7 @@ async function main() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: values.question }),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(90_000),
     })
   } catch (error) {
     throw new Error(`${endpoint} 연결 실패: ${error.message}. 개발 서버가 실행 중인지, --url이 맞는지 확인해 주세요.`, { cause: error })

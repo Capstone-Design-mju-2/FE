@@ -11,7 +11,7 @@ export class ApiRequestError extends Error {
   }
 }
 
-const TIMEOUT_MS = 15_000
+const TIMEOUT_MS = 90_000
 
 // 개발 중에는 vite.config.ts의 프록시가 /api 요청을 agent-service로 넘긴다.
 export async function postJson<T>(path: string, body: unknown): Promise<T> {
