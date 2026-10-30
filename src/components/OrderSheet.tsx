@@ -10,13 +10,14 @@ import './OrderSheet.css'
 type Props = {
   product: Product
   onClose: () => void
+  onOrderComplete: (receipt: MockOrderReceipt) => void
 }
 
 // 패널 안에서 Tab으로 이동할 수 있는 요소
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
 
 // 와이어프레임 5a: 채팅 위 오른쪽 패널. 주문 API 연결 전이라 목업 옵션으로 동작한다.
-function OrderSheet({ product, onClose }: Props) {
+function OrderSheet({ product, onClose, onOrderComplete }: Props) {
   const titleId = useId()
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -172,8 +173,10 @@ function OrderSheet({ product, onClose }: Props) {
                 setOrderError(false)
                 try {
                   const result = createMockOrder(product, optionId, quantity)
-                  if (result) setReceipt(result)
-                  else setOrderError(true)
+                  if (result) {
+                    setReceipt(result)
+                    onOrderComplete(result)
+                  } else setOrderError(true)
                 } catch {
                   setOrderError(true)
                 }
