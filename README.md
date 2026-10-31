@@ -26,15 +26,22 @@ npm run dev      # http://localhost:5173
 
 기본값은 목업 모드라서 BE 없이 바로 화면을 볼 수 있다.
 
-첫 화면(`/` 또는 `/#home`)은 `docs/Beauty Shop.dc.html`을 기준으로 만든 메인 화면이다. 검색창·예시 질문은 AI 상담 화면(`#chat`)으로 이어진다. 카테고리 타일은 상품 조회 API가 준비될 때까지 안내만 표시한다. 기존 목업 점검 주소(`/?mock=...`)는 상담 화면으로 바로 열린다.
+첫 화면(`/` 또는 `/#home`)은 `docs/Beauty Shop.dc.html`을 기준으로 만든 메인 화면이다. 검색창·예시 질문은 AI 상담 화면(`#chat`)으로 이어진다. 기존 목업 점검 주소(`/?mock=...`)는 상담 화면으로 바로 열린다.
 
-마이페이지(`#my`)는 주문/배송 조회와 재입고 알림의 일부 화면만 시연한다. 현재 화면에서 완료한 체험 주문은 주문 목록 맨 위에 보이고, 새로고침하면 사라진다. 고정 예시 주문·배송·재입고 정보는 가상 데이터다. 예시 주문의 외부 링크는 무신사 뷰티 첫 화면으로 연결되며 해당 주문과 무관하다. 실제 주문 처리나 알림 발송을 뜻하지 않는다. 배송지 관리, 기획전, 로그인·회원가입은 Issue #10 범위에서 제외했다. 카테고리별 실제 상품 조회, 리뷰 상세, 피부 타입 선택·전달은 BE `docs/API.md`의 계약과 데이터가 준비되면 연결한다.
+- **카테고리 타일**을 누르면 BE 카테고리별 상품 목록(`GET /api/v1/products?category=…`)을 정렬(리뷰 많은 순·평점 높은 순·가격순)과 "상품 더 보기"(10개씩)로 보여 준다. 타일과 BE 카테고리 코드의 대응은 `src/lib/catalog.ts`의 `HOME_CATEGORIES`(BE search-mcp 카테고리 표 기준)에 있다. 상품이 하나도 없는 카테고리는 BE가 `400 INVALID_PRODUCT_LIST`를 주므로 "상품 없음"으로 표시한다.
+- **지금 인기 랭킹**은 카테고리별 `sort=popular`(무신사 리뷰 수 많은 순) 상위 5개다. BE에 카테고리 없는 전체 목록은 없어서 탭은 스킨케어·선케어·립·메이크업이다.
+- **상품 카드**를 누르면 리뷰 패널이 열리고 리뷰 조회 API(`GET /api/v1/products/{id}/reviews`)로 정렬(최신·별점·좋아요)과 작성자 피부 타입(건성·지성·복합성·민감성) 필터, "리뷰 더 보기"(20개씩)를 제공한다. 리뷰 수는 수집해 둔 수(상품당 최대 300개)라 카드의 무신사 리뷰 수보다 적을 수 있다고 함께 안내한다. 피부 타입을 고르지 않은 리뷰는 "피부 타입 미선택"으로 표시한다.
+- 평점은 BE `reviewScore`(0~100)를 별 5개 기준으로 바꿔 보여 준다(96 → 4.8). 상품 이미지는 수집하지 않아 자리만 표시한다.
+
+**2026-11-01 로컬 실제 BE 확인:** BE `main` `7a61063`의 catalog-service와 보존된 합성 QA 상품·리뷰 각 1개를 사용했다. FE 개발 프록시에서 상품 목록과 리뷰 조회가 각각 HTTP 200을 반환했고, 헤드리스 Chrome에서 상품 카드 → 리뷰 패널 → 닫기 흐름과 브라우저 예외 없음까지 확인했다. 무신사 수집 실데이터 전체의 정렬·페이지 동작은 이 확인 범위에 포함되지 않는다.
+
+마이페이지(`#my`)는 주문/배송 조회와 재입고 알림의 일부 화면만 시연한다. 현재 화면에서 완료한 체험 주문은 주문 목록 맨 위에 보이고, 새로고침하면 사라진다. 고정 예시 주문·배송·재입고 정보는 가상 데이터다. 예시 주문의 외부 링크는 무신사 뷰티 첫 화면으로 연결되며 해당 주문과 무관하다. 실제 주문 처리나 알림 발송을 뜻하지 않는다. 배송지 관리, 기획전, 로그인·회원가입은 Issue #10 범위에서 제외했다. 채팅의 피부 타입 선택·전달(`skinType`)은 BE 구현(11주차 초) 후 연결한다.
 
 ## 화면 데이터 출처
 
 | 화면 | 데이터 출처 |
 | --- | --- |
-| 메인 추천 상품·가격·평점·랭킹 | `src/mocks/home-products.ts`의 가상 시연 데이터. 실제 판매·인기 순위가 아님 |
+| 메인 카테고리 상품·랭킹·리뷰 | `VITE_USE_MOCK=false`에서 BE catalog-service의 상품 목록·리뷰 조회 API(수집한 무신사 데이터, 수집일 기준). 목업 모드에서는 `src/mocks/catalog.ts`의 가상 데이터이며 화면에 목업 안내를 띄운다 |
 | 마이페이지 주문·배송·재입고 | 체험 주문은 현재 앱 상태의 `MockOrderReceipt`, 고정 예시 주문·재입고는 `src/components/MyPage.tsx`의 가상 시연 데이터. 실제 사용자 이력과 연결되지 않음 |
 | AI 상담 상품 | 기본값은 `src/mocks/chat-response.example.json`, `VITE_USE_MOCK=false`에서 BE `/api/v1/chat` 응답 |
 
@@ -42,8 +49,14 @@ npm run dev      # http://localhost:5173
 
 | 설정 | 동작 |
 | --- | --- |
-| `VITE_USE_MOCK=true` (기본) | `src/mocks/chat-response.example.json`을 응답으로 쓴다 |
-| `VITE_USE_MOCK=false` | `/api/v1/chat`을 호출한다. 개발 서버가 `AGENT_SERVICE_URL`(기본 `http://127.0.0.1:8000`)로 넘긴다 |
+| `VITE_USE_MOCK=true` (기본) | 채팅은 `src/mocks/chat-response.example.json`, 메인 상품·리뷰는 `src/mocks/catalog.ts`를 쓴다 |
+| `VITE_USE_MOCK=false` | 실제 API를 호출한다. 개발 서버가 경로별로 넘긴다 (아래 표) |
+
+| 경로 | 개발 서버가 넘기는 곳 (기본값) |
+| --- | --- |
+| `/api/v1/products…` (상품 목록·리뷰) | `CATALOG_SERVICE_URL` (`http://127.0.0.1:8081`) |
+| `/api/v1/orders…` (주문 생성) | `ORDER_SERVICE_URL` (`http://127.0.0.1:8082`) |
+| 그 밖의 `/api` (채팅) | `AGENT_SERVICE_URL` (`http://127.0.0.1:8000`) |
 
 공통 기본값은 `.env.development`에 있다. 내 컴퓨터에서만 바꾸려면 `.env.development.local`을 만든다.
 
@@ -149,11 +162,11 @@ npm run check:live-chat -- --question "수분크림 100원 이하" --expect empt
 
 ```text
 src/
-  api/          # 서버 호출 (client.ts: 공통 fetch, chat.ts: /chat, order.ts: 목업 옵션)
-  components/   # ChatInput, ProductCard, OrderSheet
-  lib/          # 가격·재고·배송일 표시 형식, 주문 수량·옵션 규칙
-  types/        # API 계약 타입 (api.ts: BE docs/API.md, order.ts: 주문 계약 전 임시 타입)
-  mocks/        # BE docs/mocks의 목업 응답, 주문 옵션 목업
+  api/          # 서버 호출 (client.ts: 공통 fetch, chat.ts: /chat, catalog.ts: 상품 목록·리뷰, order.ts·createOrder.ts: 주문)
+  components/   # ChatInput, ProductCard, Home, ReviewSheet, OrderSheet, MyPage
+  lib/          # 표시 형식, 주문 규칙, 카테고리 코드·카탈로그 응답 검증, 패널 공통 동작(useDialog)
+  types/        # API 계약 타입 (api.ts: 채팅, catalog.ts: 상품 목록·리뷰, order.ts: 주문)
+  mocks/        # BE docs/mocks의 목업 응답, 상품·리뷰·주문 옵션 목업
   App.tsx       # 채팅 화면
   index.css     # 색·글꼴 토큰
 ```

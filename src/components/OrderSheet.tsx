@@ -4,6 +4,7 @@ import OrderComplete from './OrderComplete'
 import type { MockOrderReceipt, ProductOptions } from '../types/order'
 import { formatDelivery, formatPrice } from '../lib/format'
 import { clampQuantity, firstAvailableOption, maxQuantity } from '../lib/order'
+import { useDialog } from '../lib/useDialog'
 import type { Product } from '../types/api'
 import './OrderSheet.css'
 
@@ -12,9 +13,6 @@ type Props = {
   onClose: () => void
   onOrderComplete: (receipt: MockOrderReceipt) => void
 }
-
-// 패널 안에서 Tab으로 이동할 수 있는 요소
-const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
 
 // 와이어프레임 5a: 채팅 위 오른쪽 패널. 주문 API 연결 전이라 목업 옵션으로 동작한다.
 function OrderSheet({ product, onClose, onOrderComplete }: Props) {
@@ -72,33 +70,8 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
     }
   }
 
-  // 열릴 때 닫기 버튼으로 포커스를 옮긴다. 닫힌 뒤 포커스 복귀는 App이 맡는다.
-  useEffect(() => {
-    closeRef.current?.focus()
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-        return
-      }
-      // aria-modal 동안 Tab·Shift+Tab이 패널 밖으로 나가지 않게 처음·끝 요소에서 순환시킨다.
-      if (e.key !== 'Tab' || !panelRef.current) return
-      const focusable = [...panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)]
-      if (focusable.length === 0) return
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      const active = document.activeElement
-      const outside = !panelRef.current.contains(active)
-      if (e.shiftKey && (active === first || outside)) {
-        e.preventDefault()
-        last.focus()
-      } else if (!e.shiftKey && (active === last || outside)) {
-        e.preventDefault()
-        first.focus()
-      }
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose, receipt])
+  // 닫힌 뒤 포커스 복귀는 App이 맡는다.
+  useDialog(panelRef, closeRef, onClose, receipt)
 
   return (
     <div className="order-sheet">
