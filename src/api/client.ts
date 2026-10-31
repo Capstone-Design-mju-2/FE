@@ -15,16 +15,26 @@ export class ApiRequestError extends Error {
 
 const TIMEOUT_MS = 90_000
 
+type RequestOptions = { timeoutMs?: number }
+
 // 개발 중 요청 대상은 vite.config.ts의 경로별 프록시가 결정한다.
-export async function postJson<T>(
-  path: string, body: unknown, { timeoutMs = TIMEOUT_MS }: { timeoutMs?: number } = {},
+export function postJson<T>(path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
+  return requestJson<T>('POST', path, body, options)
+}
+
+export function getJson<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return requestJson<T>('GET', path, undefined, options)
+}
+
+async function requestJson<T>(
+  method: 'GET' | 'POST', path: string, body: unknown, { timeoutMs = TIMEOUT_MS }: RequestOptions,
 ): Promise<T> {
   let res: Response
   try {
     res = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      method,
+      headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
+      body: method === 'POST' ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(timeoutMs),
     })
   } catch (e) {

@@ -1,7 +1,12 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  HOME_CATEGORIES, PRODUCT_SORTS, RANKING_TABS, categoryLabel, formatReviewScore,
+} from '../lib/catalog'
 import { formatPrice } from '../lib/format'
-import { homeProducts, type HomeProduct } from '../mocks/home-products'
+import { useProducts } from '../lib/useProducts'
+import type { ProductSort, ProductSummary } from '../types/catalog'
 import ChatInput from './ChatInput'
+import ReviewSheet from './ReviewSheet'
 import './Home.css'
 
 type Props = {
@@ -11,27 +16,36 @@ type Props = {
   onOpenChat: () => void
 }
 
-const categories = [
-  ['스킨케어', '#efe6da'], ['클렌징', '#e8ede6'], ['선케어', '#f3ebd6'],
-  ['메이크업', '#e9d3d6'], ['립', '#e4ccd0'], ['헤어', '#eee7dc'],
-  ['바디', '#f0eae2'], ['향수', '#e6e4ee'],
-] as const
-
-const recommendationIds = [1, 2, 8, 4, 10]
-const rankingIds = {
-  전체: [4, 1, 8, 6, 10],
-  스킨케어: [1, 8, 2],
-  메이크업: [6, 7],
-  선케어: [4],
-} as const
-
-const byId = (id: number) => homeProducts.find((product) => product.id === id)
-const productsFor = (ids: readonly number[]) => ids.map(byId).filter((product): product is HomeProduct => Boolean(product))
+const useMock = import.meta.env.VITE_USE_MOCK === 'true'
+const CATEGORY_PAGE_SIZE = 10
+const RANKING_SIZE = 5
 
 function Home({ examples, loading, onAsk, onOpenChat }: Props) {
   const [input, setInput] = useState('')
-  const [rankTab, setRankTab] = useState<keyof typeof rankingIds>('전체')
   const inputRef = useRef<HTMLInputElement>(null)
+  const [category, setCategory] = useState<string | null>(null)
+  const [categorySort, setCategorySort] = useState<ProductSort>('popular')
+  const [categoryAttempt, setCategoryAttempt] = useState(0)
+  const [rankTab, setRankTab] = useState<string>(RANKING_TABS[0])
+  const [rankAttempt, setRankAttempt] = useState(0)
+  const categoryList = useProducts(category, categorySort, CATEGORY_PAGE_SIZE, categoryAttempt)
+  const ranking = useProducts(rankTab, 'popular', RANKING_SIZE, rankAttempt)
+
+  // 리뷰 패널: 열린 동안 메인은 inert, 닫히면 누른 상품 카드로 포커스를 돌린다.
+  const [reviewProduct, setReviewProduct] = useState<ProductSummary | null>(null)
+  const reviewOpenerRef = useRef<HTMLElement | null>(null)
+  const openReviews = (product: ProductSummary) => {
+    reviewOpenerRef.current = document.activeElement as HTMLElement | null
+    setReviewProduct(product)
+  }
+  const closeReviews = useCallback(() => setReviewProduct(null), [])
+  useEffect(() => {
+    if (reviewProduct === null && reviewOpenerRef.current) {
+      reviewOpenerRef.current.focus()
+      reviewOpenerRef.current = null
+    }
+  }, [reviewProduct])
+
   const ask = (question: string) => {
     if (loading) return
     setInput('')
@@ -39,116 +53,169 @@ function Home({ examples, loading, onAsk, onOpenChat }: Props) {
   }
 
   return (
-    <div className="home">
-      <header className="home__header">
-        <div className="home__header-inner">
-          <a className="home__brand" href="#home">PeauPick</a>
-          <nav className="home__nav" aria-label="주요 메뉴">
-            <a href="#home" aria-current="page">홈</a>
-            <a href="#chat">AI 상담</a>
-            <a href="#my">마이페이지</a>
-          </nav>
-        </div>
-      </header>
-
-      <main>
-        <section className="home__hero">
-          <div className="home__hero-inner">
-            <p className="home__eyebrow">실제 리뷰를 근거로 찾는 뷰티 쇼핑</p>
-            <h1>오늘은 어떤 화장품을 찾으세요?</h1>
-            <div className="home__search">
-              <ChatInput inputRef={inputRef} value={input} disabled={loading} onChange={setInput}
-                onSubmit={ask} submitLabel="AI에게 묻기" />
-            </div>
-            <div className="home__examples" aria-label="예시 질문">
-              {examples.map((example) => (
-                <button key={example} type="button" onClick={() => ask(example)} disabled={loading}>
-                  {example}
-                </button>
-              ))}
-            </div>
+    <>
+      <div className="home" inert={reviewProduct !== null}>
+        <header className="home__header">
+          <div className="home__header-inner">
+            <a className="home__brand" href="#home">PeauPick</a>
+            <nav className="home__nav" aria-label="주요 메뉴">
+              <a href="#home" aria-current="page">홈</a>
+              <a href="#chat">AI 상담</a>
+              <a href="#my">마이페이지</a>
+            </nav>
           </div>
-        </section>
+        </header>
 
-        <div className="home__content">
-          <section className="home__categories" aria-label="카테고리별 상품 보기 준비 중">
-            {categories.map(([name, tint]) => (
-              <div key={name} className="home__category">
-                <span className="home__category-icon" style={{ background: tint }} aria-hidden="true" />
-                <span>{name}</span>
+        <main>
+          <section className="home__hero">
+            <div className="home__hero-inner">
+              <p className="home__eyebrow">실제 리뷰를 근거로 찾는 뷰티 쇼핑</p>
+              <h1>오늘은 어떤 화장품을 찾으세요?</h1>
+              <div className="home__search">
+                <ChatInput inputRef={inputRef} value={input} disabled={loading} onChange={setInput}
+                  onSubmit={ask} submitLabel="AI에게 묻기" />
               </div>
-            ))}
-          </section>
-          <p className="home__category-note">카테고리별 상품 보기는 API가 준비되면 열립니다.</p>
-
-          <section className="home__section" aria-labelledby="home-recommend-title">
-            <div className="home__section-head">
-              <div>
-                <h2 id="home-recommend-title">리뷰가 좋은 상품</h2>
-                <p>디자인 시안의 예시 상품으로 화면을 미리 보여 드려요.</p>
-              </div>
-              <button className="home__text-action" type="button" onClick={onOpenChat}>AI로 더 좁히기 →</button>
-            </div>
-            <div className="home__product-grid">
-              {productsFor(recommendationIds).map((product) => (
-                <HomeProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </section>
-
-          <section className="home__chat-banner">
-            <h2>원하는 조건을 말하면<br />리뷰로 골라 드려요</h2>
-            <button type="button" onClick={onOpenChat}>AI 상담 시작</button>
-          </section>
-
-          <section className="home__section" aria-labelledby="home-ranking-title">
-            <div className="home__section-head home__section-head--rank">
-              <div>
-                <h2 id="home-ranking-title">지금 인기 랭킹</h2>
-                <p>순위와 상품 정보는 실제 판매·인기 데이터가 아닌 가상 예시예요.</p>
-              </div>
-              <div className="home__rank-tabs" role="group" aria-label="랭킹 카테고리">
-                {(Object.keys(rankingIds) as (keyof typeof rankingIds)[]).map((tab) => (
-                  <button key={tab} type="button" aria-pressed={rankTab === tab}
-                    onClick={() => setRankTab(tab)}>{tab}</button>
+              <div className="home__examples" aria-label="예시 질문">
+                {examples.map((example) => (
+                  <button key={example} type="button" onClick={() => ask(example)} disabled={loading}>
+                    {example}
+                  </button>
                 ))}
               </div>
             </div>
-            <div className="home__product-grid">
-              {productsFor(rankingIds[rankTab]).map((product, index) => (
-                <HomeProductCard key={product.id} product={product} rank={index + 1} />
-              ))}
-            </div>
           </section>
-        </div>
-      </main>
 
-      <footer className="home__footer">
-        <span>PeauPick · 리뷰 기반 뷰티 쇼핑 체험</span>
-        <span>상품·가격·평점·순위는 디자인 시연용 예시이며, 주문은 결제 없이 진행돼요.</span>
-      </footer>
+          <div className="home__content">
+            {useMock && (
+              <p className="home__mock-note">목업 모드: 아래 상품·리뷰는 가상 데이터예요. 실제 데이터는 BE 연결 후 보여요.</p>
+            )}
+
+            <section className="home__categories" aria-label="카테고리">
+              {HOME_CATEGORIES.map(({ label, code, tint }) => (
+                <button key={code} type="button" className="home__category" aria-pressed={category === code}
+                  onClick={() => setCategory(code)}>
+                  <span className="home__category-icon" style={{ background: tint }} aria-hidden="true" />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </section>
+
+            {category && (
+              <section className="home__section" aria-labelledby="home-category-title">
+                <div className="home__section-head">
+                  <div>
+                    <h2 id="home-category-title">{categoryLabel(category)} 상품</h2>
+                    <p>
+                      {categoryList.loading || categoryList.error
+                        ? '수집한 무신사 뷰티 상품이에요.'
+                        : `수집한 무신사 뷰티 상품 ${categoryList.total.toLocaleString('ko-KR')}개`}
+                    </p>
+                  </div>
+                  <label className="home__sort">
+                    <span className="sr-only">정렬</span>
+                    <select value={categorySort} onChange={(e) => setCategorySort(e.target.value as ProductSort)}>
+                      {PRODUCT_SORTS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <ProductGrid list={categoryList} onOpen={openReviews}
+                  onRetry={() => setCategoryAttempt((n) => n + 1)} emptyText="이 카테고리에는 아직 상품이 없어요." />
+                {categoryList.hasMore && (
+                  <button type="button" className="home__more" onClick={categoryList.loadMore}
+                    disabled={categoryList.loadingMore}>
+                    {categoryList.loadingMore ? '불러오는 중…' : '상품 더 보기'}
+                  </button>
+                )}
+              </section>
+            )}
+
+            <section className="home__chat-banner">
+              <h2>원하는 조건을 말하면<br />리뷰로 골라 드려요</h2>
+              <button type="button" onClick={onOpenChat}>AI 상담 시작</button>
+            </section>
+
+            <section className="home__section" aria-labelledby="home-ranking-title">
+              <div className="home__section-head home__section-head--rank">
+                <div>
+                  <h2 id="home-ranking-title">지금 인기 랭킹</h2>
+                  <p>무신사 리뷰 수가 많은 순서예요 (수집한 날 기준).</p>
+                </div>
+                <div className="home__rank-tabs" role="group" aria-label="랭킹 카테고리">
+                  {RANKING_TABS.map((code) => (
+                    <button key={code} type="button" aria-pressed={rankTab === code}
+                      onClick={() => setRankTab(code)}>{categoryLabel(code)}</button>
+                  ))}
+                </div>
+              </div>
+              <ProductGrid list={ranking} ranked onOpen={openReviews}
+                onRetry={() => setRankAttempt((n) => n + 1)} emptyText="랭킹에 표시할 상품이 아직 없어요." />
+            </section>
+          </div>
+        </main>
+
+        <footer className="home__footer">
+          <span>PeauPick · 리뷰 기반 뷰티 쇼핑 체험</span>
+          <span>가격·리뷰 수·평점은 수집한 날 기준이며, 주문은 결제 없이 진행돼요.</span>
+        </footer>
+      </div>
+      {reviewProduct && <ReviewSheet product={reviewProduct} onClose={closeReviews} />}
+    </>
+  )
+}
+
+type ProductList = ReturnType<typeof useProducts>
+
+function ProductGrid({ list, ranked = false, onOpen, onRetry, emptyText }: {
+  list: ProductList
+  ranked?: boolean
+  onOpen: (product: ProductSummary) => void
+  onRetry: () => void
+  emptyText: string
+}) {
+  if (list.loading) return <p className="home__state" role="status">상품을 불러오는 중이에요.</p>
+  if (list.error) {
+    return (
+      <div className="home__state" role="alert">
+        <p>{list.error}</p>
+        <button type="button" className="home__more" onClick={onRetry}>다시 불러오기</button>
+      </div>
+    )
+  }
+  if (list.products.length === 0) return <p className="home__state">{emptyText}</p>
+  return (
+    <div className="home__product-grid">
+      {list.products.map((product, index) => (
+        <HomeProductCard key={product.productId} product={product} rank={ranked ? index + 1 : undefined}
+          onOpen={onOpen} />
+      ))}
     </div>
   )
 }
 
-function HomeProductCard({ product, rank }: {
-  product: HomeProduct
+function HomeProductCard({ product, rank, onOpen }: {
+  product: ProductSummary
   rank?: number
+  onOpen: (product: ProductSummary) => void
 }) {
   return (
-    <article className="home-product">
-      <span className="home-product__image" style={{ background: product.tint }}>
+    <button type="button" className="home-product" onClick={() => onOpen(product)}
+      aria-label={`${product.brand} ${product.name} 리뷰 보기`}>
+      <span className="home-product__image" aria-hidden="true">
         {rank && <span className="home-product__rank">{rank}</span>}
-        <span className="home-product__placeholder">제품 이미지</span>
+        <span className="home-product__placeholder">이미지 없음</span>
       </span>
       <span className="home-product__brand">{product.brand}</span>
       <span className="home-product__name">{product.name}</span>
       <span className="home-product__prices">
         <strong>{formatPrice(product.price)}</strong>
       </span>
-      <span className="home-product__reviews">★ {product.rating} ({product.reviewCount.toLocaleString('ko-KR')})</span>
-      <span className="home-product__sample">시안 예시 · 상세 화면 없음</span>
-    </article>
+      <span className="home-product__reviews">
+        ★ {formatReviewScore(product.reviewScore)} ({product.reviewCount.toLocaleString('ko-KR')})
+      </span>
+      <span className="home-product__sample">리뷰 보기 →</span>
+    </button>
   )
 }
 
