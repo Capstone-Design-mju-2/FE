@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  HOME_CATEGORIES, formatReviewScore, hasMorePages, isProductListResponse, isReviewListResponse,
+  HOME_CATEGORIES, formatReviewScore, hasMorePages, isEmptyCategoryError, isProductListResponse, isReviewListResponse,
   productListPath, reviewListPath, skinTypeLabel,
 } from '../src/lib/catalog.ts'
+import { ApiRequestError } from '../src/api/client.ts'
 
 // BE docs/API.md 2절 예시 응답
 const productList = {
@@ -52,6 +53,16 @@ test('평점·페이지·피부 타입 표시', () => {
   assert.equal(skinTypeLabel('combination'), '복합성')
   assert.equal(skinTypeLabel('dehydrated_oily'), '수부지')
   assert.equal(skinTypeLabel(null), null)
+})
+
+test('상품 없는 카테고리 오류만 빈 목록으로 취급한다', () => {
+  assert.equal(isEmptyCategoryError(new ApiRequestError(400,
+    { code: 'INVALID_PRODUCT_LIST', message: '없는 카테고리' })), true)
+  assert.equal(isEmptyCategoryError(new ApiRequestError(400,
+    { code: 'INVALID_REVIEW_LIST', message: '잘못된 리뷰 요청' })), false)
+  assert.equal(isEmptyCategoryError(new ApiRequestError(500,
+    { code: 'INVALID_PRODUCT_LIST', message: '서버 오류' })), false)
+  assert.equal(isEmptyCategoryError(new Error('network')), false)
 })
 
 test('메인 카테고리 코드는 BE search-mcp 카테고리 표와 같다', () => {

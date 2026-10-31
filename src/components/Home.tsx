@@ -93,7 +93,7 @@ function Home({ examples, loading, onAsk, onOpenChat }: Props) {
             <section className="home__categories" aria-label="카테고리">
               {HOME_CATEGORIES.map(({ label, code, tint }) => (
                 <button key={code} type="button" className="home__category" aria-pressed={category === code}
-                  onClick={() => setCategory(code)}>
+                  onClick={() => setCategory((current) => current === code ? null : code)}>
                   <span className="home__category-icon" style={{ background: tint }} aria-hidden="true" />
                   <span>{label}</span>
                 </button>
@@ -123,10 +123,13 @@ function Home({ examples, loading, onAsk, onOpenChat }: Props) {
                 <ProductGrid list={categoryList} onOpen={openReviews}
                   onRetry={() => setCategoryAttempt((n) => n + 1)} emptyText="이 카테고리에는 아직 상품이 없어요." />
                 {categoryList.hasMore && (
-                  <button type="button" className="home__more" onClick={categoryList.loadMore}
-                    disabled={categoryList.loadingMore}>
-                    {categoryList.loadingMore ? '불러오는 중…' : '상품 더 보기'}
-                  </button>
+                  <>
+                    <button type="button" className="home__more" onClick={categoryList.loadMore}
+                      disabled={categoryList.loadingMore}>
+                      {categoryList.loadingMore ? '불러오는 중…' : '상품 더 보기'}
+                    </button>
+                    {categoryList.moreError && <p className="home__more-error" role="alert">{categoryList.moreError}</p>}
+                  </>
                 )}
               </section>
             )}
@@ -200,19 +203,20 @@ function HomeProductCard({ product, rank, onOpen }: {
   onOpen: (product: ProductSummary) => void
 }) {
   return (
-    <button type="button" className="home-product" onClick={() => onOpen(product)}
-      aria-label={`${product.brand} ${product.name} 리뷰 보기`}>
+    <button type="button" className="home-product" onClick={() => onOpen(product)}>
       <span className="home-product__image" aria-hidden="true">
         {rank && <span className="home-product__rank">{rank}</span>}
         <span className="home-product__placeholder">이미지 없음</span>
       </span>
+      {rank && <span className="sr-only">{rank}위</span>}
       <span className="home-product__brand">{product.brand}</span>
       <span className="home-product__name">{product.name}</span>
       <span className="home-product__prices">
         <strong>{formatPrice(product.price)}</strong>
       </span>
       <span className="home-product__reviews">
-        ★ {formatReviewScore(product.reviewScore)} ({product.reviewCount.toLocaleString('ko-KR')})
+        {product.reviewCount === 0 ? '리뷰 없음' :
+          `★ ${formatReviewScore(product.reviewScore)} (${product.reviewCount.toLocaleString('ko-KR')})`}
       </span>
       <span className="home-product__sample">리뷰 보기 →</span>
     </button>

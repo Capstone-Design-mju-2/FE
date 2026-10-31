@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchProducts } from '../api/catalog'
 import { ApiRequestError } from '../api/client'
 import type { ProductSort, ProductSummary } from '../types/catalog'
-import { hasMorePages } from './catalog'
+import { hasMorePages, isEmptyCategoryError } from './catalog'
 
 type ListState = {
   key: string
@@ -11,6 +11,7 @@ type ListState = {
   page: number
   hasMore: boolean
   error: string | null
+  moreError: string | null
   loadingMore: boolean
 }
 
@@ -28,14 +29,14 @@ export function useProducts(category: string | null, sort: ProductSort, size: nu
     let active = true
     fetchProducts({ category, sort, page: 0, size }).then((response) => {
       if (active) setState({ key, products: response.products, total: response.total, page: 0,
-        hasMore: hasMorePages(response), error: null, loadingMore: false })
+        hasMore: hasMorePages(response), error: null, moreError: null, loadingMore: false })
     }).catch((e) => {
       if (!active) return
       // BE는 상품이 하나도 없는 카테고리 코드에 400 INVALID_PRODUCT_LIST를 준다.
       // 정렬·페이지·개수는 FE가 정해서 보내므로, 이 코드는 "상품 없음"으로 보여 준다.
-      const empty = e instanceof ApiRequestError && e.code === 'INVALID_PRODUCT_LIST'
+      const empty = isEmptyCategoryError(e)
       setState({ key, products: [], total: 0, page: 0, hasMore: false,
-        error: empty ? null : errorMessage(e), loadingMore: false })
+        error: empty ? null : errorMessage(e), moreError: null, loadingMore: false })
     })
     return () => { active = false }
   }, [category, sort, size, key])
@@ -45,20 +46,23 @@ export function useProducts(category: string | null, sort: ProductSort, size: nu
   const loadMore = () => {
     if (!category || !current || current.loadingMore || !current.hasMore) return
     const page = current.page + 1
-    setState({ ...current, loadingMore: true })
+    setState({ ...current, moreError: null, loadingMore: true })
     fetchProducts({ category, sort, page, size }).then((response) => {
       setState((prev) => prev?.key !== key ? prev : {
         ...prev, products: [...prev.products, ...response.products], page,
-        hasMore: hasMorePages(response), loadingMore: false,
+        hasMore: hasMorePages(response), moreError: null, loadingMore: false,
       })
     }).catch(() => {
-      setState((prev) => prev?.key !== key ? prev : { ...prev, loadingMore: false })
+      setState((prev) => prev?.key !== key ? prev : {
+        ...prev, loadingMore: false, moreError: '상품을 더 불러오지 못했어요. 다시 눌러 주세요.',
+      })
     })
   }
 
   return {
     loading: Boolean(category) && current === null,
     error: current?.error ?? null,
+    moreError: current?.moreError ?? null,
     products: current?.products ?? [],
     total: current?.total ?? 0,
     hasMore: current?.hasMore ?? false,

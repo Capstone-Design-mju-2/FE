@@ -120,3 +120,10 @@
 .review-sheet__more {
   justify-self: center;
 }
+
+.review-sheet__more-error {
+  margin: 0;
+  color: var(--color-accent-dark);
+  font-size: 13px;
+  text-align: center;
+}

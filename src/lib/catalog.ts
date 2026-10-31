@@ -1,4 +1,5 @@
 import type { ProductListResponse, ProductSort, ReviewListResponse, ReviewSort, SkinType } from '../types/catalog'
+import { ApiRequestError } from '../api/client.ts'
 
 // 메인 카테고리 타일 → BE 카테고리 코드 (BE search-mcp의 카테고리 표 기준)
 export const HOME_CATEGORIES = [
@@ -59,6 +60,10 @@ export function formatReviewScore(score: number): string {
 
 export function hasMorePages(response: { page: number; size: number; total: number }): boolean {
   return (response.page + 1) * response.size < response.total
+}
+
+export function isEmptyCategoryError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.status === 400 && error.code === 'INVALID_PRODUCT_LIST'
 }
 
 export function productListPath(params: { category: string; sort: ProductSort; page: number; size: number }): string {
