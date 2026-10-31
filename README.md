@@ -138,7 +138,7 @@ npm run check:live-chat -- --question "수분크림 100원 이하" --expect empt
 
 상품 종류나 효능 단어가 없는 질문은 BE가 catalog 검색 없이 빈 결과를 돌려줄 수 있으므로 검색 결과 0개 검증에는 쓰지 않는다. 위 예시는 실제 가격 데이터에 따라 조정한다. 이 명령은 HTTP 응답의 계약·상품 수·리뷰 근거·재고 상태·오류 본문을 확인한다. 서비스 중지·복구와 브라우저 카드·오류 화면 확인은 위 절차대로 별도 수행해야 한다. 현재 로컬에 BE가 실행되지 않으면 완료 조건을 통과한 것으로 기록하지 않는다.
 
-**2026-10-30 로컬 검증 기록:** BE `main`의 catalog·order·agent 서비스와 PostgreSQL을 직접 실행하고, 무신사 수집 데이터 대신 합성 QA 토너 1개(리뷰 1개, 재고 3개)를 적재했다. FE 개발 프록시를 거친 `check:live-chat`에서 정상 카드 1개·order-service 중단 시 `UNKNOWN`·catalog-service 중단 시 HTTP 502 `PRODUCT_SEARCH_FAILED`·복구 후 정상·가격 100원 이하 결과 0개가 모두 통과했다. 헤드리스 Chrome에서는 실제 BE 응답의 카드·리뷰 근거·재고 표시를 두 번 연속 확인했고, 두 서비스의 장애 화면과 복구 후 정상 화면도 확인했다. 브라우저 예외는 없었다. LLM 키를 설정하지 않아 `reason`은 `null`이었으므로 **실데이터 검색 품질과 Stage 1C LLM 시연 완료를 뜻하지 않는다.** 검증 후 로컬 서비스를 종료했고 DB 볼륨은 보존했다.
+**2026-10-30 로컬 검증 기록:** BE `main` 커밋 [`100783e`](https://github.com/Capstone-Design-mju-2/BE/commit/100783e)(BE #22 머지, 10/30 16:44 클론)의 catalog·order·agent 서비스와 PostgreSQL을 직접 실행하고, 무신사 수집 데이터 대신 합성 QA 토너 1개(리뷰 1개, 재고 3개)를 적재했다. FE 개발 프록시를 거친 `check:live-chat`에서 정상 카드 1개·order-service 중단 시 `UNKNOWN`·catalog-service 중단 시 HTTP 502 `PRODUCT_SEARCH_FAILED`·복구 후 정상·가격 100원 이하 결과 0개가 모두 통과했다. 헤드리스 Chrome에서는 실제 BE 응답의 카드·리뷰 근거·재고 표시를 두 번 연속 확인했고, 두 서비스의 장애 화면과 복구 후 정상 화면도 확인했다. 브라우저 예외는 없었다. LLM 키를 설정하지 않아 `reason`은 `null`이었으므로 **실데이터 검색 품질과 Stage 1C LLM 시연 완료를 뜻하지 않는다.** 검증 후 로컬 서비스를 종료했고 DB 볼륨은 보존했다. 이 커밋 이후 BE `main`에 들어간 변경(BE PR #25 LLM 시간 제한을 질문당 60초로 조정, #27·#29 OpenSearch 의미 검색, #24 주문 차감 락, #33 카테고리별 상품 목록·리뷰 조회 API 등)은 이 검증 범위에 포함되지 않으므로, 다시 확인할 때는 사용한 BE 커밋을 함께 기록한다.
 
 `npm test`는 임시 로컬 HTTP 서버와 응답 fixture로 FE의 전송·오류 처리를 검증한다. 실제 BE 연동이나 브라우저 화면 검증을 대신하지 않는다. 개발 프록시는 `npm run dev`에서 적용되며, 배포 환경에서는 `/api`를 BE로 전달하는 별도 구성이 필요하다.
 
