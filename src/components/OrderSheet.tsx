@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createMockOrder, loadProductOptions } from '../api/order'
 import OrderComplete from './OrderComplete'
+import ProductImage from './ProductImage'
 import type { MockOrderReceipt, ProductOptions } from '../types/order'
 import { formatDelivery, formatPrice } from '../lib/format'
 import { clampQuantity, firstAvailableOption, maxQuantity } from '../lib/order'
@@ -95,7 +96,9 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
             <p className="order-sheet__trial">결제 없는 체험 주문입니다</p>
 
             <div className="order-sheet__product">
-              <div className="order-sheet__thumb" aria-hidden="true" />
+              <div className="order-sheet__thumb" aria-hidden="true">
+                <ProductImage product={product} className="order-sheet__photo" sizes="64px" fallback={null} />
+              </div>
               <div>
                 <div className="order-sheet__brand">{product.brand}</div>
                 <div className="order-sheet__name">{product.name}</div>
