@@ -5,7 +5,8 @@ import { test } from 'node:test'
 import { createOrder } from '../src/api/createOrder.ts'
 import { ApiRequestError } from '../src/api/client.ts'
 
-const request = { ordererKey: 'demo', items: [{ productId: 101, optionKey: '11', quantity: 2 }] }
+const request = { ordererKey: 'demo', requestId: '5f0c6a3e-8b1d-4e2a-9c7f-3d2b1a0e9f84',
+  items: [{ productId: 101, optionKey: '11', quantity: 2 }] }
 const success = { orderId: 7, totalPrice: 25800,
   items: [{ productId: 101, optionKey: '11', name: '수분크림 A 50ml', unitPrice: 12900, quantity: 2 }] }
 
