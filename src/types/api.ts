@@ -35,6 +35,7 @@ export type Product = {
 
 export type ChatRequest = {
   message: string
+  skinType?: 'dry' | 'oily' | 'combination' | 'sensitive'
 }
 
 export type ChatResponse = {

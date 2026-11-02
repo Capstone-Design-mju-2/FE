@@ -5,9 +5,11 @@ import { isChatResponse } from './validateChat'
 
 const useMock = import.meta.env.VITE_USE_MOCK === 'true'
 
-export async function sendChat(message: string): Promise<ChatResponse> {
+export async function sendChat(message: string, skinType?: ChatRequest['skinType']): Promise<ChatResponse> {
   if (useMock) return mockChat()
-  const response = await postJson<unknown>('/api/v1/chat', { message } satisfies ChatRequest)
+  const response = await postJson<unknown>('/api/v1/chat', {
+    message, ...(skinType ? { skinType } : {}),
+  } satisfies ChatRequest)
   if (!isChatResponse(response)) {
     throw new ApiRequestError(200, {
       code: 'INVALID_RESPONSE',
