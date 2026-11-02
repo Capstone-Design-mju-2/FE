@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { imageAttempts } from '../lib/image'
+import { failedImageUrl, imageAttempt } from '../lib/image'
 
 type Props = {
   product: { imageUrl?: string | null; thumbnailUrl?: string | null }
@@ -8,17 +8,19 @@ type Props = {
   fallback: ReactNode
 }
 
-// 화면에 가까워질 때만 받고, 못 불러오면 다음 주소로, 다 안 되면 fallback을 보인다.
+// 화면에 가까워질 때만 받고, 못 불러온 주소는 기억해 두었다가 남은 크기로, 다 안 되면 fallback을 보인다.
 function ProductImage({ product, sizes, className, fallback }: Props) {
-  const attempts = imageAttempts(product)
-  const [tried, setTried] = useState(0)
-  const attempt = attempts[tried]
+  const [failed, setFailed] = useState<string[]>([])
+  const attempt = imageAttempt(product, failed)
   if (!attempt) return fallback
 
   return (
-    <img key={tried} className={className} src={attempt.src} srcSet={attempt.srcSet}
+    <img key={attempt.candidates.join(' ')} className={className} src={attempt.src} srcSet={attempt.srcSet}
       sizes={attempt.srcSet ? sizes : undefined} alt="" loading="lazy" decoding="async"
-      onError={() => setTried(tried + 1)} />
+      onError={(e) => {
+        const url = failedImageUrl(attempt, e.currentTarget.currentSrc)
+        setFailed((prev) => [...prev, url])
+      }} />
   )
 }
 
