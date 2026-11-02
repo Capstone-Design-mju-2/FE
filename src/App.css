@@ -40,6 +40,9 @@
 .chat__reset:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .chat__scroll {
+  /* 카드 안 .sr-only(absolute)가 이 상자를 기준으로 잡혀야 문서 높이를 늘리지 않는다.
+     빠지면 답변 뒤 scrollIntoView가 창 전체를 밀어 입력창이 화면 중간에 뜬다. */
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
