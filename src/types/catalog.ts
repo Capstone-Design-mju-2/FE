@@ -12,6 +12,8 @@ export type ProductSummary = {
   price: number
   reviewCount: number // 수집 당시 무신사의 전체 리뷰 수
   reviewScore: number // 수집한 평점 그대로 0~100
+  imageUrl?: string | null // 무신사 이미지 서버의 500px 사진. 없으면 null
+  thumbnailUrl?: string | null // 같은 사진의 125px
 }
 
 export type ProductListResponse = {
