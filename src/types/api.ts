@@ -26,6 +26,8 @@ export type Product = {
   name: string
   brand: string
   price: number // 원 단위 정수
+  imageUrl?: string | null // 무신사 이미지 서버의 500px 사진. 없으면 null, OpenSearch 검색이면 필드가 없다
+  thumbnailUrl?: string | null // 같은 사진의 125px
   reason: string | null // 1C 전까지는 항상 null
   evidence: Evidence[]
   inventory: Inventory

@@ -11,8 +11,16 @@
 .product-card__thumb {
   width: 96px;
   height: 96px;
+  overflow: hidden;
   border-radius: 10px;
   background: #efe6da;
+}
+
+.product-card__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-card__body {

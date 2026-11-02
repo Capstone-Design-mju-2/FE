@@ -6,6 +6,7 @@ import { formatPrice } from '../lib/format'
 import { useProducts } from '../lib/useProducts'
 import type { ProductSort, ProductSummary } from '../types/catalog'
 import ChatInput from './ChatInput'
+import ProductImage from './ProductImage'
 import ReviewSheet from './ReviewSheet'
 import './Home.css'
 
@@ -205,8 +206,11 @@ function HomeProductCard({ product, rank, onOpen }: {
   return (
     <button type="button" className="home-product" onClick={() => onOpen(product)}>
       <span className="home-product__image" aria-hidden="true">
+        {/* 순위 표시가 사진 위에 보이도록 사진을 먼저 둔다 */}
+        <ProductImage product={product} className="home-product__photo"
+          sizes="(max-width: 360px) 90vw, (max-width: 760px) 45vw, 240px"
+          fallback={<span className="home-product__placeholder">이미지 없음</span>} />
         {rank && <span className="home-product__rank">{rank}</span>}
-        <span className="home-product__placeholder">이미지 없음</span>
       </span>
       {rank && <span className="sr-only">{rank}위</span>}
       <span className="home-product__brand">{product.brand}</span>

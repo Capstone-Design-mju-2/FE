@@ -1,6 +1,7 @@
 import { formatInventory, formatPrice } from '../lib/format'
 import { canOrder } from '../lib/order'
 import type { Product } from '../types/api'
+import ProductImage from './ProductImage'
 import './ProductCard.css'
 
 type Props = {
@@ -14,7 +15,9 @@ function ProductCard({ product, onOrder }: Props) {
 
   return (
     <article className="product-card">
-      <div className="product-card__thumb" aria-hidden="true" />
+      <div className="product-card__thumb" aria-hidden="true">
+        <ProductImage product={product} className="product-card__photo" sizes="96px" fallback={null} />
+      </div>
       <div className="product-card__body">
         <div className="product-card__head">
           <div>
