@@ -142,8 +142,57 @@
   font-size: 14px;
 }
 
-.home__category-note { margin: -48px 0 0; color: var(--color-text-muted); font-size: 13px; text-align: center; }
+.home__category:hover { background: #f1ebe4; }
+.home__category[aria-pressed="true"] { background: #f1ebe4; font-weight: 700; }
 .home button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.home__mock-note {
+  margin: -24px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--color-stock-unknown-bg);
+  color: var(--color-stock-unknown-fg);
+  font-size: 13px;
+  text-align: center;
+}
+
+.home__sort select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: 14px;
+}
+
+.home__state {
+  margin: 0;
+  padding: 24px 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.home__state p { margin: 0 0 12px; }
+
+.home__more {
+  justify-self: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: 14px;
+}
+
+.home__more:hover:not(:disabled) { border-color: var(--color-text); }
+
+.home__more-error {
+  margin: 0;
+  color: var(--color-accent-dark);
+  font-size: 13px;
+  text-align: center;
+}
 
 .home__category-icon {
   width: 64px;
@@ -209,7 +258,11 @@
   aspect-ratio: 1;
   overflow: hidden;
   border-radius: 12px;
+  background: #efe6da;
 }
+
+.home-product:hover .home-product__name { text-decoration: underline; }
+.home-product:hover .home-product__sample { color: var(--color-text); }
 
 .home-product__placeholder {
   position: absolute;
@@ -314,7 +367,6 @@
   .home__content { gap: 40px; padding: 28px 16px 48px; }
   .home__categories { gap: 4px; }
   .home__category { font-size: 12px; padding: 10px 2px; }
-  .home__category-note { margin-top: -32px; }
   .home__category-icon { width: 48px; height: 48px; }
   .home__product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
   .home-product__name { font-size: 14px; }
