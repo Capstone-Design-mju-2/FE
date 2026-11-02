@@ -5,6 +5,7 @@ import { REVIEW_SORTS, SKIN_TYPES, formatReviewScore, hasMorePages, skinTypeLabe
 import { formatPrice } from '../lib/format'
 import { useDialog } from '../lib/useDialog'
 import type { ProductSummary, Review, ReviewSort, SkinType } from '../types/catalog'
+import ProductImage from './ProductImage'
 import './OrderSheet.css'
 import './ReviewSheet.css'
 
@@ -85,7 +86,9 @@ function ReviewSheet({ product, onClose }: Props) {
 
         <div className="order-sheet__body">
           <div className="order-sheet__product">
-            <div className="order-sheet__thumb" aria-hidden="true" />
+            <div className="order-sheet__thumb" aria-hidden="true">
+              <ProductImage product={product} className="order-sheet__photo" sizes="64px" fallback={null} />
+            </div>
             <div>
               <div className="order-sheet__brand">{product.brand}</div>
               <div className="order-sheet__name">{product.name}</div>
