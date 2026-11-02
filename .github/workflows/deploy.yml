@@ -1,0 +1,62 @@
+name: Deploy
+
+# 시연 서버에서 API와 같은 주소로 나가는 FE 빌드를 바꾼다.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # 서버의 rrsync는 macOS의 openrsync를 거부한다. rsync 3.2.7이 든 이미지로 고정한다.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      # 실행 화면의 브랜치 기본값은 main(첫 세팅 커밋)이라, 그대로 누르면 옛 화면이 올라간다.
+      - name: Allow dev only
+        if: github.ref_name != 'dev'
+        run: |
+          echo "::error::Use workflow from에서 dev를 골라 다시 실행해 주세요. 지금 고른 브랜치: $GITHUB_REF_NAME"
+          exit 1
+
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: API regression tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_USE_MOCK: 'false'
+
+      - name: Record the deployed commit
+        run: echo "$GITHUB_SHA $GITHUB_REF_NAME $(date -u +%FT%TZ) $GITHUB_ACTOR" > dist/version.txt
+
+      # 키는 서버의 /srv/peaupick-fe에 파일을 쓰는 것만 된다. 서버 키는 IP가 아니라 별칭으로 고정해 IP가 바뀌어도 DEPLOY_HOST만 고친다.
+      - name: Copy the build to the demo server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 600 /dev/null "$HOME/deploy_key"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/deploy_key"
+          echo 'capstone-demo ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMYFJPNuGILEvtAr91+MYvQoKw5RkHIXs0IaxOkK4a6Z' > "$HOME/known_hosts"
+          rsync -rlt --delete --delay-updates \
+            -e "ssh -i $HOME/deploy_key -o IdentitiesOnly=yes -o HostKeyAlias=capstone-demo -o UserKnownHostsFile=$HOME/known_hosts -o StrictHostKeyChecking=yes" \
+            dist/ "fe-deploy@$DEPLOY_HOST:"
