@@ -5,6 +5,9 @@ export type ProductOption = {
   optionId: number
   name: string // 예: 50ml, 21호 라이트
   soldOut: boolean
+  optionKey?: string // 실제 주문 API의 옵션 키. 목업 옵션에는 없다.
+  price?: number
+  quantity?: number
 }
 
 export type ProductOptions = {
@@ -22,11 +25,25 @@ export type MockOrderReceipt = {
   unitPrice: number
   totalPrice: number
   estimatedDeliveryDate: string | null
+  serverAccepted?: true
 }
 
-// BE docs/API.md의 주문 생성 계약. 옵션 조회 계약은 아직 정해지지 않았다.
+export type InventoryOptionsResponse = {
+  productId: number
+  options: {
+    optionKey: string
+    name: string
+    price: number
+    quantity: number
+    status: 'IN_STOCK' | 'OUT_OF_STOCK'
+  }[]
+}
+
+// BE PR #30의 주문 생성 계약. 서버의 requestId 멱등 처리는 아직 구현 전이다.
 export type CreateOrderRequest = {
   ordererKey: string
+  // 주문 시도마다 새로 만들고, 결과가 불명확한 같은 주문을 재전송할 때는 재사용한다.
+  requestId?: string
   items: { productId: number; optionKey: string; quantity: number }[]
 }
 

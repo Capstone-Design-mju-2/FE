@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
 import { formatPrice } from '../lib/format'
+import type { PersonalData } from '../lib/personal'
 import { homeProducts } from '../mocks/home-products'
 import type { MockOrderReceipt } from '../types/order'
+import MyInfo from './MyInfo'
 import './MyPage.css'
 
 const MUSINSA_BEAUTY = 'https://www.musinsa.com/main/beauty'
@@ -11,8 +13,12 @@ const sampleOrders = [
   { id: 'DEMO-002', productId: 4, date: '2026.10.06', option: '50ml', status: '주문 접수' },
 ] as const
 
-function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
-  const [tab, setTab] = useState<'orders' | 'restock'>('orders')
+function MyPage({ trialOrders, personal, onPersonalChange }: {
+  trialOrders: MockOrderReceipt[]
+  personal: PersonalData
+  onPersonalChange: Dispatch<SetStateAction<PersonalData>>
+}) {
+  const [tab, setTab] = useState<'info' | 'orders' | 'restock'>('info')
   const [alertOn, setAlertOn] = useState(true)
   const restockProduct = byId(2)
 
@@ -30,9 +36,11 @@ function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
       </header>
       <main className="my-page__layout">
         <aside className="my-page__side">
-          <p className="my-page__eyebrow">시연용 목업</p>
+          <p className="my-page__eyebrow">체험 화면</p>
           <strong>마이페이지</strong>
           <nav aria-label="마이페이지 메뉴">
+            <button type="button" aria-pressed={tab === 'info'}
+              onClick={() => setTab('info')}>내 정보</button>
             <button type="button" aria-pressed={tab === 'orders'}
               onClick={() => setTab('orders')}>주문/배송 조회</button>
             <button type="button" aria-pressed={tab === 'restock'}
@@ -41,18 +49,19 @@ function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
         </aside>
 
         <div className="my-page__content">
-          <h1>{tab === 'orders' ? '주문/배송 조회' : '재입고 알림'}</h1>
-          <p className="my-page__notice">체험 주문과 예시 주문은 시연용 데이터입니다. 실제 결제·배송·알림 신청 내역이 아닙니다.</p>
+          <h1>{tab === 'info' ? '내 정보' : tab === 'orders' ? '주문/배송 조회' : '재입고 알림'}</h1>
+          {tab === 'info' ? <MyInfo personal={personal} onChange={onPersonalChange} /> : <>
+          <p className="my-page__notice">서버에 접수된 체험 주문은 재고가 차감됩니다. 예시 주문·재입고 알림은 가상 데이터이며, 실제 결제·배송은 이루어지지 않습니다.</p>
 
           {tab === 'orders' ? (
             <div className="my-page__cards">
               {trialOrders.map((order) => (
                 <article className="my-page__card" key={order.orderId}>
-                  <div className="my-page__card-head"><b>이번 체험 주문</b><span>체험 주문번호 {order.orderId}</span></div>
+                  <div className="my-page__card-head"><b>{order.serverAccepted ? '서버 접수 체험 주문' : '화면 체험 주문'}</b><span>체험 주문번호 {order.orderId}</span></div>
                   <div className="my-page__card-body">
                     <div className="my-page__thumb" aria-hidden="true" />
                     <div className="my-page__details">
-                      <strong className="my-page__status">주문 완료 · 체험 상태</strong>
+                      <strong className="my-page__status">{order.serverAccepted ? '주문 접수 · 재고 차감' : '주문 완료 · 화면 시연'}</strong>
                       <span>{order.brand}</span>
                       <b>{order.productName}</b>
                       <span>{order.optionName} · {order.quantity}개 · {formatPrice(order.totalPrice)}</span>
@@ -99,6 +108,7 @@ function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
               </article>}
             </div>
           )}
+          </>}
         </div>
       </main>
     </div>
