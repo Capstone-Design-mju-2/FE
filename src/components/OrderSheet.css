@@ -256,6 +256,18 @@
   cursor: not-allowed;
 }
 
+.order-sheet__alternative {
+  min-height: 44px;
+  border: 1px solid var(--color-text);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+}
+
+.order-sheet__alternative:disabled { opacity: 0.4; }
+
 .order-complete { text-align: center; }
 .order-complete h3 { margin: 0; font-size: 24px; }
 .order-complete__mark {

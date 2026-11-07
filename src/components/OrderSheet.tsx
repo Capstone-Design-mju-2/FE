@@ -7,6 +7,7 @@ import ProductImage from './ProductImage'
 import type { MockOrderReceipt, ProductOptions } from '../types/order'
 import { formatDelivery, formatPrice } from '../lib/format'
 import { MAX_ORDER_QUANTITY, buildServerOrderReceipt, clampQuantity, firstAvailableOption, maxQuantity, newOrderRequestId } from '../lib/order'
+import { isSoldOutOrderFailure } from '../lib/alternatives'
 import { useDialog } from '../lib/useDialog'
 import type { Product } from '../types/api'
 import './OrderSheet.css'
@@ -15,12 +16,14 @@ type Props = {
   product: Product
   onClose: () => void
   onOrderComplete: (receipt: MockOrderReceipt) => void
+  onShowAlternatives: () => void
+  canShowAlternatives: boolean
 }
 
 const useMock = import.meta.env.VITE_USE_MOCK === 'true'
 
 // 와이어프레임 5a: 목업 모드와 실제 옵션·주문 API 모드를 같은 화면에서 처리한다.
-function OrderSheet({ product, onClose, onOrderComplete }: Props) {
+function OrderSheet({ product, onClose, onOrderComplete, onShowAlternatives, canShowAlternatives }: Props) {
   const titleId = useId()
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -33,6 +36,7 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
   const [orderError, setOrderError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [unknownResult, setUnknownResult] = useState(false)
+  const [soldOutOnOrder, setSoldOutOnOrder] = useState(false)
   const submittingRef = useRef(false)
   const selectedOption = productOptions?.options.find((option) => option.optionId === optionId)
   const max = selectedOption?.quantity === undefined ? maxQuantity(product.inventory) :
@@ -60,10 +64,12 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
   }
 
   const submit = async () => {
-    if (submittingRef.current || unknownResult || !selectedOption || selectedOption.soldOut || quantity > max) return
+    if (submittingRef.current || unknownResult || optionStatus !== 'ready' ||
+      !selectedOption || selectedOption.soldOut || quantity > max) return
     submittingRef.current = true
     setSubmitting(true)
     setOrderError(null)
+    setSoldOutOnOrder(false)
     try {
       const result = useMock
         ? createMockOrder(product, selectedOption.optionId, quantity)
@@ -86,7 +92,9 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
       const unknown = error instanceof ApiRequestError &&
         (['TIMEOUT', 'NETWORK_ERROR', 'INVALID_RESPONSE'].includes(error.code) || error.status >= 500)
       if (unknown || !(error instanceof ApiRequestError)) setUnknownResult(true)
-      setOrderError(error instanceof ApiRequestError ? error.message :
+      const soldOut = error instanceof ApiRequestError && isSoldOutOrderFailure(error)
+      setSoldOutOnOrder(soldOut)
+      setOrderError(soldOut ? '방금 품절됐어요. 같은 조건의 다른 상품을 찾아볼 수 있어요.' : error instanceof ApiRequestError ? error.message :
         '주문 처리 여부를 확인하지 못했어요. 중복 주문을 피하려면 지금은 다시 주문하지 마세요.')
       if (error instanceof ApiRequestError && error.status === 409) retryOptionLoad()
     } finally {
@@ -163,6 +171,7 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
                             option.quantity === undefined ? maxQuantity(product.inventory) :
                               Math.max(1, Math.min(option.quantity, MAX_ORDER_QUANTITY))))
                           setOrderError(null)
+                          setSoldOutOnOrder(false)
                         }}
                       />
                       <span>{option.name}{option.price === undefined ? '' : ` · ${formatPrice(option.price)}`}{option.soldOut ? ' 품절' : ''}</span>
@@ -218,10 +227,15 @@ function OrderSheet({ product, onClose, onOrderComplete }: Props) {
                 {orderError}
               </p>
             )}
+            {(allSoldOut || soldOutOnOrder) && canShowAlternatives && <button type="button"
+              className="order-sheet__alternative" onClick={onShowAlternatives} disabled={submitting}>
+              같은 조건의 대안 보기
+            </button>}
             <button
               type="button"
               className="order-sheet__submit"
-              disabled={productOptions === null || allSoldOut || selectedOption?.soldOut || quantity > max || submitting || unknownResult}
+              disabled={optionStatus !== 'ready' || productOptions === null || allSoldOut ||
+                selectedOption?.soldOut || quantity > max || submitting || unknownResult}
               onClick={submit}
             >
               {submitting ? '주문 요청 중…' : '주문하기'}

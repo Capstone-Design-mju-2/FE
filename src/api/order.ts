@@ -13,7 +13,13 @@ export function getProductOptions(productId: number): ProductOptions | null {
 
 // BE PR #30 계약. 구현 전에는 404 PRODUCT_NOT_FOUND나 프록시 오류로 주문을 막는다.
 export async function loadProductOptions(productId: number): Promise<ProductOptions | null> {
-  if (useMock) return getProductOptions(productId)
+  if (useMock) {
+    const options = getProductOptions(productId)
+    if (productId === 101 && new URLSearchParams(window.location.search).get('mock') === 'alternatives' && options) {
+      return { ...options, options: options.options.map((option) => ({ ...option, soldOut: true })) }
+    }
+    return options
+  }
   let response: unknown
   try {
     response = await getJson<unknown>(`/api/v1/inventories/${productId}/options`, { timeoutMs: 15_000 })
