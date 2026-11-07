@@ -35,9 +35,13 @@ export type Product = {
 
 export type ChatRequest = {
   message: string
+  skinType?: 'dry' | 'oily' | 'combination' | 'sensitive'
+  searchConditions?: Record<string, unknown>
+  excludeProductIds?: number[]
 }
 
 export type ChatResponse = {
   answer: string
   products: Product[]
+  searchConditions?: Record<string, unknown> | null
 }

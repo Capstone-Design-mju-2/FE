@@ -30,7 +30,7 @@ function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
       </header>
       <main className="my-page__layout">
         <aside className="my-page__side">
-          <p className="my-page__eyebrow">시연용 목업</p>
+          <p className="my-page__eyebrow">체험 화면</p>
           <strong>마이페이지</strong>
           <nav aria-label="마이페이지 메뉴">
             <button type="button" aria-pressed={tab === 'orders'}
@@ -42,17 +42,17 @@ function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
 
         <div className="my-page__content">
           <h1>{tab === 'orders' ? '주문/배송 조회' : '재입고 알림'}</h1>
-          <p className="my-page__notice">체험 주문과 예시 주문은 시연용 데이터입니다. 실제 결제·배송·알림 신청 내역이 아닙니다.</p>
+          <p className="my-page__notice">서버에 접수된 체험 주문은 재고가 차감됩니다. 예시 주문·재입고 알림은 가상 데이터이며, 실제 결제·배송은 이루어지지 않습니다.</p>
 
           {tab === 'orders' ? (
             <div className="my-page__cards">
               {trialOrders.map((order) => (
                 <article className="my-page__card" key={order.orderId}>
-                  <div className="my-page__card-head"><b>이번 체험 주문</b><span>체험 주문번호 {order.orderId}</span></div>
+                  <div className="my-page__card-head"><b>{order.serverAccepted ? '서버 접수 체험 주문' : '화면 체험 주문'}</b><span>체험 주문번호 {order.orderId}</span></div>
                   <div className="my-page__card-body">
                     <div className="my-page__thumb" aria-hidden="true" />
                     <div className="my-page__details">
-                      <strong className="my-page__status">주문 완료 · 체험 상태</strong>
+                      <strong className="my-page__status">{order.serverAccepted ? '주문 접수 · 재고 차감' : '주문 완료 · 화면 시연'}</strong>
                       <span>{order.brand}</span>
                       <b>{order.productName}</b>
                       <span>{order.optionName} · {order.quantity}개 · {formatPrice(order.totalPrice)}</span>

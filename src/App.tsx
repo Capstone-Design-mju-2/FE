@@ -9,12 +9,14 @@ import ProductCard from './components/ProductCard'
 import type { ChatResponse, Product } from './types/api'
 import type { MockOrderReceipt } from './types/order'
 import { screenForLocation } from './lib/navigation'
+import { alternativeRequest, excludesSoldOutProducts, type SearchOrigin } from './lib/alternatives'
 import './App.css'
 
 type Message =
   | { id: number; role: 'user'; text: string }
-  | { id: number; role: 'assistant'; response: ChatResponse }
-  | { id: number; role: 'error'; question: string; code: string; detail: string }
+  | { id: number; role: 'assistant'; response: ChatResponse; origin: SearchOrigin }
+  | { id: number; role: 'error'; question: string; code: string; detail: string; alternative?: { origin: SearchOrigin; productId: number } }
+  | { id: number; role: 'soldout'; productName: string }
 
 const EXAMPLES = [
   '건성 피부에 끈적이지 않는 수분크림 중 내일 도착 가능한 거',
@@ -31,7 +33,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [orderProduct, setOrderProduct] = useState<Product | null>(null)
+  const [orderTarget, setOrderTarget] = useState<{ product: Product; origin: SearchOrigin } | null>(null)
   const [trialOrders, setTrialOrders] = useState<MockOrderReceipt[]>([])
   const orderOpenerRef = useRef<HTMLElement | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -43,7 +45,7 @@ function App() {
       setScreen(next)
       if (next !== 'chat') {
         orderOpenerRef.current = null
-        setOrderProduct(null)
+        setOrderTarget(null)
       }
     }
     window.addEventListener('hashchange', onNavigate)
@@ -56,19 +58,19 @@ function App() {
   }
 
   // 패널이 열리면 채팅 화면이 inert가 되면서 포커스가 풀리므로, 누른 버튼을 클릭 시점에 기억해 둔다.
-  const openOrder = (product: Product) => {
+  const openOrder = (product: Product, origin: SearchOrigin) => {
     orderOpenerRef.current = document.activeElement as HTMLElement | null
-    setOrderProduct(product)
+    setOrderTarget({ product, origin })
   }
-  const closeOrder = useCallback(() => setOrderProduct(null), [])
+  const closeOrder = useCallback(() => setOrderTarget(null), [])
 
   // 패널이 닫혀 inert가 풀린 뒤 주문 버튼으로 포커스를 되돌린다.
   useEffect(() => {
-    if (orderProduct === null && orderOpenerRef.current) {
+    if (orderTarget === null && orderOpenerRef.current) {
       orderOpenerRef.current.focus()
       orderOpenerRef.current = null
     }
-  }, [orderProduct])
+  }, [orderTarget])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
@@ -81,7 +83,9 @@ function App() {
     setLoading(true)
     try {
       const response = await sendChat(question)
-      setMessages((prev) => [...prev, { id: nextId++, role: 'assistant', response }])
+      const origin: SearchOrigin = { question, searchConditions: response.searchConditions ?? null,
+        excludedProductIds: [] }
+      setMessages((prev) => [...prev, { id: nextId++, role: 'assistant', response, origin }])
       // 재시도가 성공하면 실패 때 되돌려 둔 질문만 지우고, 새로 쓰던 질문은 남긴다.
       if (preserveDraft) setInput((prev) => (prev.trim() === question ? '' : prev))
     } catch (e) {
@@ -91,6 +95,33 @@ function App() {
           : { code: 'UNKNOWN_ERROR', detail: '알 수 없는 오류가 발생했어요.' }
       setMessages((prev) => [...prev, { id: nextId++, role: 'error', question, ...error }])
       if (!preserveDraft) setInput(question) // 재시도 중에는 작성 중인 질문을 보존한다
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const askAlternative = async (origin: SearchOrigin, productId: number, productName: string, showNotice = true) => {
+    const request = alternativeRequest(origin, productId)
+    if (!request || loading) return
+    closeOrder()
+    if (showNotice) setMessages((prev) => [...prev, { id: nextId++, role: 'soldout', productName }])
+    setLoading(true)
+    try {
+      const response = await sendChat(request.message, {
+        skinType: request.skinType, searchConditions: request.searchConditions,
+        excludeProductIds: request.excludeProductIds,
+      })
+      if (!excludesSoldOutProducts(response.products.map((product) => product.productId), request.excludeProductIds ?? [])) {
+        throw new ApiRequestError(200, { code: 'INVALID_RESPONSE', message: '품절 상품이 대안에 포함됐어요. 다시 시도해 주세요.' })
+      }
+      const nextOrigin: SearchOrigin = { ...origin, excludedProductIds: request.excludeProductIds ?? [] }
+      setMessages((prev) => [...prev, { id: nextId++, role: 'assistant', response, origin: nextOrigin }])
+    } catch (error) {
+      const details = error instanceof ApiRequestError
+        ? { code: error.code, detail: error.message }
+        : { code: 'UNKNOWN_ERROR', detail: '대안 상품을 찾지 못했어요.' }
+      setMessages((prev) => [...prev, { id: nextId++, role: 'error', question: request.message,
+        ...details, alternative: { origin, productId } }])
     } finally {
       setLoading(false)
     }
@@ -115,6 +146,12 @@ function App() {
     ask(question, true)
   }
 
+  const retryAlternative = (errorId: number, origin: SearchOrigin, productId: number) => {
+    if (loading) return
+    setMessages((prev) => prev.filter((message) => message.id !== errorId))
+    askAlternative(origin, productId, '', false)
+  }
+
   const resetChat = () => {
     if (loading) return
     setMessages([])
@@ -137,7 +174,7 @@ function App() {
   return (
     <>
       {/* 주문 확인 패널이 열려 있는 동안 채팅 화면은 포커스·클릭을 받지 않는다. */}
-      <div className="chat" inert={orderProduct !== null}>
+      <div className="chat" inert={orderTarget !== null}>
         <header className="chat__header">
           <div className="chat__header-inner">
             <a className="chat__brand" href="#home">PeauPick</a>
@@ -187,7 +224,9 @@ function App() {
                     <button
                       type="button"
                       className="notice__action"
-                      onClick={() => retry(m.id, m.question)}
+                      onClick={() => m.alternative
+                        ? retryAlternative(m.id, m.alternative.origin, m.alternative.productId)
+                        : retry(m.id, m.question)}
                       disabled={loading}
                     >
                       다시 시도
@@ -195,7 +234,10 @@ function App() {
                   </div>
                 )
               }
-              return <Answer key={m.id} response={m.response} onOrder={openOrder} />
+              if (m.role === 'soldout') return <div key={m.id} className="notice" role="status">
+                <b>방금 품절됐어요</b><span className="notice__detail">{m.productName}을 제외하고 같은 조건으로 대안을 요청했어요.</span>
+              </div>
+              return <Answer key={m.id} response={m.response} origin={m.origin} onOrder={openOrder} />
             })}
 
             {loading && (
@@ -220,7 +262,9 @@ function App() {
           <ChatInput inputRef={inputRef} value={input} disabled={loading} onChange={setInput} onSubmit={send} />
         </footer>
       </div>
-      {orderProduct && <OrderSheet product={orderProduct} onClose={closeOrder}
+      {orderTarget && <OrderSheet product={orderTarget.product} onClose={closeOrder}
+        onShowAlternatives={() => askAlternative(orderTarget.origin, orderTarget.product.productId, orderTarget.product.name)}
+        canShowAlternatives={alternativeRequest(orderTarget.origin, orderTarget.product.productId) !== null}
         onOrderComplete={(receipt) => setTrialOrders((orders) => [receipt, ...orders])} />}
     </>
   )
@@ -228,21 +272,23 @@ function App() {
 
 type AnswerProps = {
   response: ChatResponse
-  onOrder: (product: Product) => void
+  origin: SearchOrigin
+  onOrder: (product: Product, origin: SearchOrigin) => void
 }
 
-function Answer({ response, onOrder }: AnswerProps) {
+function Answer({ response, origin, onOrder }: AnswerProps) {
   const { answer, products } = response
 
   if (products.length === 0) {
+    const alternative = origin.excludedProductIds.length > 0
     return (
       <div className="answer">
         <div className="bubble bubble--assistant">{answer}</div>
-        {/* 1A는 조건 완화 제안을 주지 않아서 BE 검색 규칙에 맞는 안내만 보여 준다. */}
         <div className="notice">
-          <b>조건을 모두 만족하는 상품이 없어요</b>
+          <b>{alternative ? '같은 조건의 다른 상품이 없어요' : '조건을 모두 만족하는 상품이 없어요'}</b>
           <span className="notice__detail">
-            수분크림·선크림처럼 상품 종류를 넣거나, 가격 조건을 빼고 다시 물어보세요.
+            {alternative ? '조건을 바꿔 새로 물어보세요.' :
+              '수분크림·선크림처럼 상품 종류를 넣거나, 가격 조건을 빼고 다시 물어보세요.'}
           </span>
         </div>
       </div>
@@ -262,7 +308,7 @@ function Answer({ response, onOrder }: AnswerProps) {
         </p>
       )}
       {products.map((product) => (
-        <ProductCard key={product.productId} product={product} onOrder={onOrder} />
+        <ProductCard key={product.productId} product={product} onOrder={(selected) => onOrder(selected, origin)} />
       ))}
     </div>
   )
