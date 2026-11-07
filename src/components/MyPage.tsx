@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
 import { formatPrice } from '../lib/format'
+import type { PersonalData } from '../lib/personal'
 import { homeProducts } from '../mocks/home-products'
 import type { MockOrderReceipt } from '../types/order'
+import MyInfo from './MyInfo'
 import './MyPage.css'
 
 const MUSINSA_BEAUTY = 'https://www.musinsa.com/main/beauty'
@@ -11,8 +13,12 @@ const sampleOrders = [
   { id: 'DEMO-002', productId: 4, date: '2026.10.06', option: '50ml', status: '주문 접수' },
 ] as const
 
-function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
-  const [tab, setTab] = useState<'orders' | 'restock'>('orders')
+function MyPage({ trialOrders, personal, onPersonalChange }: {
+  trialOrders: MockOrderReceipt[]
+  personal: PersonalData
+  onPersonalChange: Dispatch<SetStateAction<PersonalData>>
+}) {
+  const [tab, setTab] = useState<'info' | 'orders' | 'restock'>('info')
   const [alertOn, setAlertOn] = useState(true)
   const restockProduct = byId(2)
 
@@ -33,6 +39,8 @@ function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
           <p className="my-page__eyebrow">체험 화면</p>
           <strong>마이페이지</strong>
           <nav aria-label="마이페이지 메뉴">
+            <button type="button" aria-pressed={tab === 'info'}
+              onClick={() => setTab('info')}>내 정보</button>
             <button type="button" aria-pressed={tab === 'orders'}
               onClick={() => setTab('orders')}>주문/배송 조회</button>
             <button type="button" aria-pressed={tab === 'restock'}
@@ -41,7 +49,8 @@ function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
         </aside>
 
         <div className="my-page__content">
-          <h1>{tab === 'orders' ? '주문/배송 조회' : '재입고 알림'}</h1>
+          <h1>{tab === 'info' ? '내 정보' : tab === 'orders' ? '주문/배송 조회' : '재입고 알림'}</h1>
+          {tab === 'info' ? <MyInfo personal={personal} onChange={onPersonalChange} /> : <>
           <p className="my-page__notice">서버에 접수된 체험 주문은 재고가 차감됩니다. 예시 주문·재입고 알림은 가상 데이터이며, 실제 결제·배송은 이루어지지 않습니다.</p>
 
           {tab === 'orders' ? (
@@ -99,6 +108,7 @@ function MyPage({ trialOrders }: { trialOrders: MockOrderReceipt[] }) {
               </article>}
             </div>
           )}
+          </>}
         </div>
       </main>
     </div>

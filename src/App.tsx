@@ -10,6 +10,7 @@ import type { ChatResponse, Product } from './types/api'
 import type { MockOrderReceipt } from './types/order'
 import { screenForLocation } from './lib/navigation'
 import { alternativeRequest, excludesSoldOutProducts, type SearchOrigin } from './lib/alternatives'
+import { addChatRecord, readPersonalData, savePersonalData, toChatRecord } from './lib/personal'
 import './App.css'
 
 type Message =
@@ -35,9 +36,12 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [orderTarget, setOrderTarget] = useState<{ product: Product; origin: SearchOrigin } | null>(null)
   const [trialOrders, setTrialOrders] = useState<MockOrderReceipt[]>([])
+  const [personal, setPersonal] = useState(readPersonalData)
   const orderOpenerRef = useRef<HTMLElement | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { savePersonalData(personal) }, [personal])
 
   useEffect(() => {
     const onNavigate = () => {
@@ -82,10 +86,12 @@ function App() {
     if (!preserveDraft) setInput('')
     setLoading(true)
     try {
-      const response = await sendChat(question)
-      const origin: SearchOrigin = { question, searchConditions: response.searchConditions ?? null,
+      const skinType = personal.skinType === 'unknown' ? undefined : personal.skinType
+      const response = await sendChat(question, { skinType })
+      const origin: SearchOrigin = { question, skinType, searchConditions: response.searchConditions ?? null,
         excludedProductIds: [] }
       setMessages((prev) => [...prev, { id: nextId++, role: 'assistant', response, origin }])
+      setPersonal((prev) => addChatRecord(prev, toChatRecord(question, response)))
       // 재시도가 성공하면 실패 때 되돌려 둔 질문만 지우고, 새로 쓰던 질문은 남긴다.
       if (preserveDraft) setInput((prev) => (prev.trim() === question ? '' : prev))
     } catch (e) {
@@ -116,6 +122,7 @@ function App() {
       }
       const nextOrigin: SearchOrigin = { ...origin, excludedProductIds: request.excludeProductIds ?? [] }
       setMessages((prev) => [...prev, { id: nextId++, role: 'assistant', response, origin: nextOrigin }])
+      setPersonal((prev) => addChatRecord(prev, toChatRecord(request.message, response)))
     } catch (error) {
       const details = error instanceof ApiRequestError
         ? { code: error.code, detail: error.message }
@@ -169,7 +176,7 @@ function App() {
   if (screen === 'home') {
     return <Home examples={EXAMPLES} loading={loading} onAsk={askFromHome} onOpenChat={showChat} />
   }
-  if (screen === 'my') return <MyPage trialOrders={trialOrders} />
+  if (screen === 'my') return <MyPage trialOrders={trialOrders} personal={personal} onPersonalChange={setPersonal} />
 
   return (
     <>
