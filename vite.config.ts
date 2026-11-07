@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
-      // Gateway가 채팅·상품·재고·주문을 경로별 서비스로 나눈다.
+      // Gateway가 채팅·피부 분석·상품·재고·주문을 경로별 서비스로 나눈다.
       // 팀 서버에서는 Caddy의 HTTPS/Basic 인증을 거쳐 같은 Gateway로 간다.
       proxy: {
         '/api': {
