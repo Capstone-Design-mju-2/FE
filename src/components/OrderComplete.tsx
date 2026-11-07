@@ -9,7 +9,9 @@ export default function OrderComplete({ receipt, onClose }: Props) {
       <div className="order-sheet__body order-complete">
         <div className="order-complete__mark" aria-hidden="true">✓</div>
         <h3>체험 주문이 완료됐어요</h3>
-        <p className="order-sheet__trial">화면 체험용 주문입니다. 실제 결제·주문 접수·배송은 이루어지지 않아요.</p>
+        <p className="order-sheet__trial">{receipt.serverAccepted
+          ? '체험 주문이 서버에 접수되고 재고가 차감됐어요. 결제·실제 배송은 이루어지지 않아요.'
+          : '화면 체험용 주문입니다. 실제 결제·주문 접수·배송은 이루어지지 않아요.'}</p>
         <p className="order-complete__number">주문 번호 <strong>{receipt.orderId}</strong></p>
         <dl className="order-complete__details">
           <div><dt>브랜드</dt><dd>{receipt.brand}</dd></div>
