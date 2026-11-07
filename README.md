@@ -55,10 +55,25 @@ npm run dev      # http://localhost:5173
 | 경로 | 개발 서버가 넘기는 곳 (기본값) |
 | --- | --- |
 | `/api/v1/products…` (상품 목록·리뷰) | `CATALOG_SERVICE_URL` (`http://127.0.0.1:8081`) |
-| `/api/v1/orders…` (주문 생성) | `ORDER_SERVICE_URL` (`http://127.0.0.1:8082`) |
+| `/api/v1/orders…`, `/api/v1/inventories…` (주문·재고) | `ORDER_SERVICE_URL` (`http://127.0.0.1:8082`) |
 | 그 밖의 `/api` (채팅) | `AGENT_SERVICE_URL` (`http://127.0.0.1:8000`) |
 
 공통 기본값은 `.env.development`에 있다. 내 컴퓨터에서만 바꾸려면 `.env.development.local`을 만든다.
+
+### 팀 BE 서버에 붙이기
+
+팀 서버(실데이터·LLM 포함)는 HTTPS와 Basic 인증을 쓰고, 서버 앞에서 경로별로 서비스를 나눠 준다. 주소와 계정은 저장소가 공개라 팀 채널에서만 공유한다. `.env.development.local`에 세 주소를 **모두 같은 팀 서버**로 넣는다. 채팅 주소만 바꾸면 상품·주문·재고 요청은 로컬 기본값(8081·8082)으로 가서 실패한다.
+
+```bash
+# .env.development.local (git에 안 올라감)
+VITE_USE_MOCK=false
+AGENT_SERVICE_URL=https://<팀 서버 주소>
+CATALOG_SERVICE_URL=https://<팀 서버 주소>
+ORDER_SERVICE_URL=https://<팀 서버 주소>
+BE_BASIC_AUTH=team:<팀 비밀번호>
+```
+
+개발 서버 프록시가 모든 경로에 이 계정을 붙이고(`auth`), 요청 Host를 팀 서버 주소로 바꿔(`changeOrigin`) 보낸다. 브라우저에는 계정이 노출되지 않는다. 설정을 바꾼 뒤에는 개발 서버를 다시 시작한다. `BE_BASIC_AUTH`가 없으면 인증 없이 보내므로 로컬 BE에는 그대로 붙는다.
 
 ```bash
 # .env.development.local
