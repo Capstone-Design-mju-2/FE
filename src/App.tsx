@@ -9,6 +9,7 @@ import ProductCard from './components/ProductCard'
 import type { ChatResponse, Product } from './types/api'
 import type { MockOrderReceipt } from './types/order'
 import { screenForLocation } from './lib/navigation'
+import { addChatRecord, readPersonalData, savePersonalData, toChatRecord } from './lib/personal'
 import './App.css'
 
 type Message =
@@ -33,9 +34,12 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [orderProduct, setOrderProduct] = useState<Product | null>(null)
   const [trialOrders, setTrialOrders] = useState<MockOrderReceipt[]>([])
+  const [personal, setPersonal] = useState(readPersonalData)
   const orderOpenerRef = useRef<HTMLElement | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { savePersonalData(personal) }, [personal])
 
   useEffect(() => {
     const onNavigate = () => {
@@ -80,8 +84,9 @@ function App() {
     if (!preserveDraft) setInput('')
     setLoading(true)
     try {
-      const response = await sendChat(question)
+      const response = await sendChat(question, personal.skinType === 'unknown' ? undefined : personal.skinType)
       setMessages((prev) => [...prev, { id: nextId++, role: 'assistant', response }])
+      setPersonal((prev) => addChatRecord(prev, toChatRecord(question, response)))
       // 재시도가 성공하면 실패 때 되돌려 둔 질문만 지우고, 새로 쓰던 질문은 남긴다.
       if (preserveDraft) setInput((prev) => (prev.trim() === question ? '' : prev))
     } catch (e) {
@@ -132,7 +137,7 @@ function App() {
   if (screen === 'home') {
     return <Home examples={EXAMPLES} loading={loading} onAsk={askFromHome} onOpenChat={showChat} />
   }
-  if (screen === 'my') return <MyPage trialOrders={trialOrders} />
+  if (screen === 'my') return <MyPage trialOrders={trialOrders} personal={personal} onPersonalChange={setPersonal} />
 
   return (
     <>
