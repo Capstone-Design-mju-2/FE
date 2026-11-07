@@ -50,34 +50,29 @@ npm run dev      # http://localhost:5173
 | 설정 | 동작 |
 | --- | --- |
 | `VITE_USE_MOCK=true` (기본) | 채팅은 `src/mocks/chat-response.example.json`, 메인 상품·리뷰는 `src/mocks/catalog.ts`를 쓴다 |
-| `VITE_USE_MOCK=false` | 실제 API를 호출한다. 개발 서버가 경로별로 넘긴다 (아래 표) |
+| `VITE_USE_MOCK=false` | 실제 API를 호출한다. 개발 서버가 Gateway로 넘긴다 |
 
-| 경로 | 개발 서버가 넘기는 곳 (기본값) |
-| --- | --- |
-| `/api/v1/products…` (상품 목록·리뷰) | `CATALOG_SERVICE_URL` (`http://127.0.0.1:8081`) |
-| `/api/v1/orders…`, `/api/v1/inventories…` (주문·재고) | `ORDER_SERVICE_URL` (`http://127.0.0.1:8082`) |
-| 그 밖의 `/api` (채팅) | `AGENT_SERVICE_URL` (`http://127.0.0.1:8000`) |
+채팅·상품 목록·리뷰·재고·주문 요청은 모두 `GATEWAY_SERVICE_URL`(기본 `http://127.0.0.1:8080`)로 보낸다. Gateway가 각 서비스로 나누며, 연결 실패나 시간 초과 시 503 `SERVICE_UNAVAILABLE`을 반환한다. 채팅은 서버 메시지를 보여 주고, 결과가 불명확한 주문 오류에서는 중복 주문을 막는다.
 
 공통 기본값은 `.env.development`에 있다. 내 컴퓨터에서만 바꾸려면 `.env.development.local`을 만든다.
 
 ### 팀 BE 서버에 붙이기
 
-팀 서버(실데이터·LLM 포함)는 HTTPS와 Basic 인증을 쓰고, 서버 앞에서 경로별로 서비스를 나눠 준다. 주소와 계정은 저장소가 공개라 팀 채널에서만 공유한다. `.env.development.local`에 세 주소를 **모두 같은 팀 서버**로 넣는다. 채팅 주소만 바꾸면 상품·주문·재고 요청은 로컬 기본값(8081·8082)으로 가서 실패한다.
+팀 서버(실데이터·LLM 포함)는 HTTPS와 Basic 인증을 쓴다. 주소와 계정은 저장소가 공개라 팀 채널에서만 공유한다. `.env.development.local`에는 Gateway 대상 주소 하나만 넣는다. 이전 설정의 `AGENT_SERVICE_URL`·`CATALOG_SERVICE_URL`·`ORDER_SERVICE_URL`은 더는 읽지 않는다.
 
 ```bash
 # .env.development.local (git에 안 올라감)
 VITE_USE_MOCK=false
-AGENT_SERVICE_URL=https://<팀 서버 주소>
-CATALOG_SERVICE_URL=https://<팀 서버 주소>
-ORDER_SERVICE_URL=https://<팀 서버 주소>
+GATEWAY_SERVICE_URL=https://<팀 서버 주소>
 BE_BASIC_AUTH=team:<팀 비밀번호>
 ```
 
-개발 서버 프록시가 모든 경로에 이 계정을 붙이고(`auth`), 요청 Host를 팀 서버 주소로 바꿔(`changeOrigin`) 보낸다. 브라우저에는 계정이 노출되지 않는다. 설정을 바꾼 뒤에는 개발 서버를 다시 시작한다. `BE_BASIC_AUTH`가 없으면 인증 없이 보내므로 로컬 BE에는 그대로 붙는다.
+개발 서버 프록시가 모든 경로에 이 계정을 붙이고(`auth`), 요청 Host를 팀 서버 주소로 바꿔(`changeOrigin`) 보낸다. 브라우저에는 계정이 노출되지 않는다. 설정을 바꾼 뒤에는 개발 서버를 다시 시작한다. `BE_BASIC_AUTH`가 없으면 로컬 Gateway에 인증 없이 연결한다. 배포된 FE는 Caddy가 같은 주소에서 `/api`를 Gateway로 넘기므로 이 개발 프록시를 사용하지 않는다.
 
 ```bash
 # .env.development.local
 VITE_USE_MOCK=false
+GATEWAY_SERVICE_URL=http://127.0.0.1:8080
 ```
 
 목업 모드에서는 주소 뒤에 `?mock=`을 붙여 상태 화면을 BE 없이 확인할 수 있다.
@@ -114,7 +109,7 @@ VITE_USE_MOCK=false
 - 품절 옵션은 선택할 수 없다. 처음에는 품절이 아닌 첫 옵션이 선택된다.
 - 수량 상한은 재고 수와 임시 상한 5개 중 작은 값이다 (PRD 열린 질문, `src/lib/order.ts`의 `MAX_ORDER_QUANTITY`).
 - **주문하기**는 목업 모드에서 유효한 옵션을 선택한 경우 주문 완료 화면으로 이동한다. 옵션 로딩·실패 상태를 표시하고, 주문 요청 중에는 중복 제출과 옵션·수량 변경을 막는다. 실패해도 선택값을 유지한다. 옵션 정보가 없거나 모든 옵션이 품절이면 비활성화한다. 실제 API 모드에서 목업 주문 완료를 만들지 않는다.
-- BE `POST /api/v1/orders`의 요청·성공·오류 처리 코드는 준비돼 있다. 개발 프록시는 이 경로를 `ORDER_SERVICE_URL`(기본 `http://127.0.0.1:8082`)로 보낸다. 주문 요청은 15초만 기다리며, 시간 초과·연결 끊김·서버 오류에서는 처리 여부를 알 수 없어 자동 재주문하지 않는다. 실제 상품의 옵션 조회 계약이 정해질 때까지 주문 버튼과 이 호출은 연결하지 않는다. 연결할 때는 확인 화면 합계를 옵션 가격으로 계산하고 완료 화면에는 주문 응답의 가격을 표시해야 한다.
+- BE `POST /api/v1/orders`의 요청·성공·오류 처리 코드는 준비돼 있다. 개발 프록시는 이 경로를 Gateway(기본 `http://127.0.0.1:8080`)로 보낸다. 주문 요청은 15초만 기다리며, 시간 초과·연결 끊김·서버 오류에서는 처리 여부를 알 수 없어 자동 재주문하지 않는다. 실제 상품의 옵션 조회 계약이 정해질 때까지 주문 버튼과 이 호출은 연결하지 않는다. 연결할 때는 확인 화면 합계를 옵션 가격으로 계산하고 완료 화면에는 주문 응답의 가격을 표시해야 한다.
 - Esc·바깥 영역·✕로 닫으면 누른 주문 버튼으로 포커스가 돌아간다. 다른 화면으로 이동하면 패널이 닫힌다. 패널이 열려 있는 동안 채팅 화면은 `inert`로 잠기고, Tab·Shift+Tab은 패널의 처음·끝 요소에서 순환한다.
 
 ## 주문 완료 화면 (목업)
@@ -142,7 +137,7 @@ PR과 `main` 푸시마다 CI가 `lint`, `build`, `test`를 돌린다.
 
 ## Stage 1B 실제 연동 확인
 
-`.env.development.local`에 `VITE_USE_MOCK=false`와 `AGENT_SERVICE_URL=http://127.0.0.1:8000`을 설정하고 개발 서버를 재시작한다. 다른 주소에서 BE를 실행하면 `AGENT_SERVICE_URL`을 바꾼다.
+`.env.development.local`에 `VITE_USE_MOCK=false`와 `GATEWAY_SERVICE_URL=http://127.0.0.1:8080`을 설정하고 개발 서버를 재시작한다. Gateway를 다른 주소에서 실행하면 `GATEWAY_SERVICE_URL`을 바꾼다.
 
 1. BE의 catalog·order·agent를 실행하고 실제 데이터에 있는 키워드로 질문한다. 개발자 도구에서 `POST /api/v1/chat`의 `{message}` 요청과 카드 응답을 확인한다.
 2. order-service를 중지하고 같은 질문을 보낸다. 카드가 유지되고 모든 재고가 `재고 확인 불가`인지 확인한다.
