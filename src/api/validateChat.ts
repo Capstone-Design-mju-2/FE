@@ -10,6 +10,8 @@ const finiteNumber = (value: unknown): value is number =>
 // 일부 카드를 제외하면 answer의 상품 수·추천 내용과 실제 표시가 달라질 수 있다.
 export function isChatResponse(value: unknown): value is ChatResponse {
   return record(value) && typeof value.answer === 'string' &&
+    (!('searchConditions' in value) || value.searchConditions === null ||
+      (record(value.searchConditions) && !Array.isArray(value.searchConditions))) &&
     Array.isArray(value.products) && value.products.every((product: unknown) => {
       if (!record(product) || !record(product.inventory)) return false
       const inventory = product.inventory

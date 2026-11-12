@@ -76,3 +76,12 @@ test('네트워크·시간 초과·잘못된 JSON·비 JSON 오류 응답을 표
     t.mock.restoreAll()
   }
 })
+
+test('Gateway의 503 오류 코드와 안내 문장을 화면까지 전달한다', async (t) => {
+  t.mock.method(globalThis, 'fetch', () => new Response(JSON.stringify({
+    code: 'SERVICE_UNAVAILABLE', message: '서비스가 잠시 응답하지 않습니다. 잠시 후 다시 시도해 주세요.',
+  }), { status: 503, headers: { 'Content-Type': 'application/json' } }))
+  await assert.rejects(() => postJson('/api/v1/chat', { message: '수분크림' }), (error) =>
+    error instanceof ApiRequestError && error.status === 503 && error.code === 'SERVICE_UNAVAILABLE' &&
+    error.message.includes('잠시 후 다시 시도'))
+})
