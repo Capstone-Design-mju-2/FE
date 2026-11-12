@@ -39,10 +39,10 @@ export type InventoryOptionsResponse = {
   }[]
 }
 
-// BE PR #30의 주문 생성 계약. 서버의 requestId 멱등 처리는 아직 구현 전이다.
+// BE PR #30의 주문 생성 계약. 같은 requestId를 다시 보내면 서버가 처음 주문을 그대로 돌려준다(BE PR #59).
 export type CreateOrderRequest = {
   ordererKey: string
-  // 주문 시도마다 새로 만들고, 결과가 불명확한 같은 주문을 재전송할 때는 재사용한다.
+  // 주문 시도마다 새로 만든다. 결과가 불명확하면 화면이 재주문을 막는다.
   requestId?: string
   items: { productId: number; optionKey: string; quantity: number }[]
 }

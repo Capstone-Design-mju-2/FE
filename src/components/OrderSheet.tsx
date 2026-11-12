@@ -94,7 +94,11 @@ function OrderSheet({ product, onClose, onOrderComplete, onShowAlternatives, can
       if (unknown || !(error instanceof ApiRequestError)) setUnknownResult(true)
       const soldOut = error instanceof ApiRequestError && isSoldOutOrderFailure(error)
       setSoldOutOnOrder(soldOut)
-      setOrderError(soldOut ? '방금 품절됐어요. 같은 조건의 다른 상품을 찾아볼 수 있어요.' : error instanceof ApiRequestError ? error.message :
+      // 상품 유형을 여럿 찾은 답은 searchConditions가 null이라 같은 조건의 대안을 요청할 수 없다(BE ADR-138).
+      const soldOutMessage = canShowAlternatives
+        ? '방금 품절됐어요. 같은 조건의 다른 상품을 찾아볼 수 있어요.'
+        : '방금 품절됐어요. 다른 상품을 골라 주세요.'
+      setOrderError(soldOut ? soldOutMessage : error instanceof ApiRequestError ? error.message :
         '주문 처리 여부를 확인하지 못했어요. 중복 주문을 피하려면 지금은 다시 주문하지 마세요.')
       if (error instanceof ApiRequestError && error.status === 409) retryOptionLoad()
     } finally {
