@@ -198,6 +198,16 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
+  overflow: hidden;
+}
+
+/* 흰 배경 사진이 동그라미 색에 섞이게 곱하기로 겹친다. 사진을 못 불러오면 색 동그라미만 남는다. */
+.home__category-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: multiply;
 }
 
 .home__section { display: grid; gap: 20px; }
