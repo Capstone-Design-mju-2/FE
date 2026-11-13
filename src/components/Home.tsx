@@ -92,10 +92,12 @@ function Home({ examples, loading, onAsk, onOpenChat }: Props) {
             )}
 
             <section className="home__categories" aria-label="카테고리">
-              {HOME_CATEGORIES.map(({ label, code, tint }) => (
+              {HOME_CATEGORIES.map(({ label, code, tint, photo }) => (
                 <button key={code} type="button" className="home__category" aria-pressed={category === code}
                   onClick={() => setCategory((current) => current === code ? null : code)}>
-                  <span className="home__category-icon" style={{ background: tint }} aria-hidden="true" />
+                  <span className="home__category-icon" style={{ background: tint }} aria-hidden="true">
+                    <ProductImage product={photo} sizes="64px" className="home__category-photo" fallback={null} />
+                  </span>
                   <span>{label}</span>
                 </button>
               ))}
