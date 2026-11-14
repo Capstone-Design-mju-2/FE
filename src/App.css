@@ -139,6 +139,19 @@
   gap: 12px;
 }
 
+/* 답이 오면 카드가 차례로 떠오르고, 각 카드의 형광펜은 카드가 자리 잡은 뒤 칠해진다(--enter-delay). */
+.answer .product-card { animation: card-in 260ms var(--ease-out) var(--enter-delay, 0ms) both; }
+.answer .product-card:nth-of-type(2) { --enter-delay: 60ms; }
+.answer .product-card:nth-of-type(3) { --enter-delay: 120ms; }
+.answer .product-card:nth-of-type(4) { --enter-delay: 180ms; }
+.answer .product-card:nth-of-type(5) { --enter-delay: 240ms; }
+
+@keyframes card-in { from { opacity: 0; transform: translateY(8px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .answer .product-card { animation-name: fade-in; }
+}
+
 .answer__text {
   margin: 4px 0;
   font-size: 18px;

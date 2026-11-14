@@ -9,9 +9,11 @@
 .order-sheet__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(34, 30, 27, 0.35);
+  background: rgb(0 0 0 / 32%);
+  animation: fade-in 300ms var(--ease-out) both;
 }
 
+/* 창은 오른쪽에서 미끄러져 들어온다. 닫을 때는 바로 사라진다(닫는 움직임은 창을 늦게 지워야 해서 넣지 않았다). */
 .order-sheet__panel {
   position: relative;
   display: flex;
@@ -21,6 +23,13 @@
   height: 100%;
   background: var(--color-surface);
   box-shadow: -12px 0 32px rgba(0, 0, 0, 0.12);
+  animation: sheet-in 400ms var(--ease-drawer) both;
+}
+
+@keyframes sheet-in { from { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .order-sheet__panel { animation-name: fade-in; }
 }
 
 .order-sheet__header {

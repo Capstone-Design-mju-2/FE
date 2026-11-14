@@ -182,6 +182,24 @@
   color: var(--color-text-muted);
   font-size: 19px;
   line-height: 1.55;
+  isolation: isolate;
+}
+
+/* 누르는 타일은 눌리는 순간 살짝 작아져 반응을 바로 보여 준다. */
+.home__showcase,
+.home-product,
+.home__category-icon {
+  transition: transform 160ms var(--ease-out), box-shadow 150ms ease;
+}
+
+.home__showcase:active:not(:disabled),
+.home-product:active { transform: scale(0.98); }
+.home__category:active .home__category-icon { transform: scale(0.95); }
+
+@media (prefers-reduced-motion: reduce) {
+  .home__showcase:active:not(:disabled),
+  .home-product:active,
+  .home__category:active .home__category-icon { transform: none; }
 }
 
 .home__content {
