@@ -1,0 +1,34 @@
+.my-info { display: grid; gap: 20px; }
+.my-info__section { display: grid; gap: 14px; padding: 22px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.my-info__section h2 { margin: 0; font-size: 20px; }
+.my-info__section p { margin: 0; line-height: 1.55; }
+.my-info__note, .my-info__empty { color: var(--color-text-muted); font-size: 14px; }
+.my-info__analyze { justify-self: start; min-height: 42px; padding: 9px 16px; border: 0; border-radius: 999px; background: var(--color-accent); color: white; font: inherit; cursor: pointer; }
+.my-info__analyze:disabled { opacity: .5; cursor: default; }
+.my-info__error { color: #a22020; }
+.my-info__observations { display: grid; gap: 10px; margin: 0; padding-left: 22px; }
+.my-info__observations small { color: var(--color-text-muted); }
+.my-info__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.my-info__fields label, .my-info__ingredient-row { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
+.my-info__wide { grid-column: 1 / -1; }
+.my-info input, .my-info select, .my-info textarea { width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: white; color: var(--color-text); font: inherit; }
+.my-info textarea { resize: vertical; }
+.my-info__ingredient-row > div { display: flex; gap: 8px; }
+.my-info__ingredient-row button, .my-info__feedback button, .my-info__clear, .my-info__delete { min-height: 38px; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: white; color: var(--color-text); font: inherit; font-size: 13px; }
+.my-info__ingredient-row button:disabled { opacity: .5; }
+.my-info__ingredients, .my-info__matched { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.my-info__ingredients li, .my-info__matched li { padding: 6px 10px; border-radius: 999px; background: rgb(0 0 0 / 5%); font-size: 13px; }
+.my-info__ingredients li { display: flex; align-items: center; gap: 7px; }
+.my-info__ingredients button { padding: 0 2px; border: 0; background: none; color: var(--color-text-muted); font-size: 17px; }
+.my-info__products, .my-info__history { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.my-info__products > li, .my-info__history > li { padding: 14px; border: 1px solid var(--color-border); border-radius: 10px; }
+.my-info__products > li > div:first-child { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.my-info__products span, .my-info__history time { color: var(--color-text-muted); font-size: 13px; }
+.my-info__products p { margin-top: 8px; font-size: 14px; }
+.my-info__feedback { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.my-info__feedback button[aria-pressed="true"] { border-color: var(--color-text); background: var(--color-text); color: white; }
+.my-info__heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.my-info__history summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; cursor: pointer; font-weight: 600; }
+.my-info__history details p { margin-top: 12px; font-size: 14px; }
+.my-info__delete { margin-top: 12px; }
+@media (max-width: 640px) { .my-info__section { padding: 16px; } .my-info__fields { grid-template-columns: 1fr; } .my-info__wide { grid-column: auto; } }
