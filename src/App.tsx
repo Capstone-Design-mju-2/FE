@@ -174,7 +174,7 @@ function App() {
       : ''
 
   if (screen === 'home') {
-    return <Home examples={EXAMPLES} loading={loading} onAsk={askFromHome} onOpenChat={showChat} />
+    return <Home examples={EXAMPLES} loading={loading} onAsk={askFromHome} />
   }
   if (screen === 'my') return <MyPage trialOrders={trialOrders} personal={personal} onPersonalChange={setPersonal} />
 
@@ -315,7 +315,8 @@ function Answer({ response, origin, onOrder }: AnswerProps) {
         </p>
       )}
       {products.map((product) => (
-        <ProductCard key={product.productId} product={product} onOrder={(selected) => onOrder(selected, origin)} />
+        <ProductCard key={product.productId} product={product} question={origin.question}
+          onOrder={(selected) => onOrder(selected, origin)} />
       ))}
     </div>
   )

@@ -3,7 +3,7 @@
 .my-info__section h2 { margin: 0; font-size: 20px; }
 .my-info__section p { margin: 0; line-height: 1.55; }
 .my-info__note, .my-info__empty { color: var(--color-text-muted); font-size: 14px; }
-.my-info__analyze { justify-self: start; min-height: 42px; padding: 9px 16px; border: 0; border-radius: 8px; background: var(--color-text); color: white; font: inherit; cursor: pointer; }
+.my-info__analyze { justify-self: start; min-height: 42px; padding: 9px 16px; border: 0; border-radius: 999px; background: var(--color-accent); color: white; font: inherit; cursor: pointer; }
 .my-info__analyze:disabled { opacity: .5; cursor: default; }
 .my-info__error { color: #a22020; }
 .my-info__observations { display: grid; gap: 10px; margin: 0; padding-left: 22px; }
@@ -17,7 +17,7 @@
 .my-info__ingredient-row button, .my-info__feedback button, .my-info__clear, .my-info__delete { min-height: 38px; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: white; color: var(--color-text); font: inherit; font-size: 13px; }
 .my-info__ingredient-row button:disabled { opacity: .5; }
 .my-info__ingredients, .my-info__matched { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.my-info__ingredients li, .my-info__matched li { padding: 6px 10px; border-radius: 999px; background: #f4eee7; font-size: 13px; }
+.my-info__ingredients li, .my-info__matched li { padding: 6px 10px; border-radius: 999px; background: rgb(0 0 0 / 5%); font-size: 13px; }
 .my-info__ingredients li { display: flex; align-items: center; gap: 7px; }
 .my-info__ingredients button { padding: 0 2px; border: 0; background: none; color: var(--color-text-muted); font-size: 17px; }
 .my-info__products, .my-info__history { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }

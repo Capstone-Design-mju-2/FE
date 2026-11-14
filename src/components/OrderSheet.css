@@ -78,7 +78,7 @@
   height: 64px;
   overflow: hidden;
   border-radius: 10px;
-  background: #efe6da;
+  background: var(--color-bg);
 }
 
 .order-sheet__photo {
@@ -173,8 +173,8 @@
 }
 
 .option-chip--sold-out span {
-  background: #f7f3ee;
-  color: #a69c93;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
   text-decoration: line-through;
 }
 
@@ -201,7 +201,7 @@
 }
 
 .stepper button:disabled {
-  color: #c9bfb4;
+  color: #c7c7cc;
   cursor: not-allowed;
 }
 
@@ -244,8 +244,8 @@
 .order-sheet__submit {
   height: 52px;
   border: 0;
-  border-radius: 10px;
-  background: var(--color-text);
+  border-radius: 999px;
+  background: var(--color-accent);
   color: #fff;
   font-size: 16px;
   font-weight: 600;
@@ -259,7 +259,7 @@
 .order-sheet__alternative {
   min-height: 44px;
   border: 1px solid var(--color-text);
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;

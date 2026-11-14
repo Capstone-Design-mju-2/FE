@@ -23,7 +23,9 @@ function ChatInput({ inputRef, value, disabled, onChange, onSubmit, submitLabel 
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (!disabled && !composing.current && value.trim()) onSubmit(value.trim())
+    if (disabled || composing.current) return
+    if (value.trim()) onSubmit(value.trim())
+    else inputRef.current?.focus()
   }
 
   return (
@@ -43,7 +45,7 @@ function ChatInput({ inputRef, value, disabled, onChange, onSubmit, submitLabel 
         placeholder="피부 타입, 사용감, 예산, 받을 날짜를 말해 주세요"
         aria-label="질문 입력"
       />
-      <button type="submit" disabled={disabled || !value.trim()}>
+      <button type="submit" className="btn-primary" disabled={disabled}>
         {submitLabel}
       </button>
     </form>

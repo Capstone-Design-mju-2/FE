@@ -87,21 +87,21 @@
 .review-sheet__skin {
   padding: 2px 8px;
   border-radius: 999px;
-  background: #f6e7e1;
+  background: var(--color-highlight);
   color: var(--color-accent-dark);
   font-size: 12px;
   font-weight: 600;
 }
 
 .review-sheet__skin--none {
-  background: #f1ebe4;
+  background: var(--color-bg);
   color: var(--color-text-muted);
   font-weight: 400;
 }
 
 .review-sheet__date {
   margin-left: auto;
-  color: #8a817a;
+  color: var(--color-text-muted);
 }
 
 .review-sheet__content {
