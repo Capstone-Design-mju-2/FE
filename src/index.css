@@ -1,22 +1,28 @@
-/* 색·글꼴은 디자인 레퍼런스(Beauty Shop)에서 가져왔다. */
+/* 연회색 바탕에 흰 타일, 강조색은 로즈 하나(ADR-161). */
 :root {
-  --color-bg: #faf7f3;
+  --color-bg: #f5f5f7;
   --color-surface: #ffffff;
-  --color-text: #221e1b;
-  --color-text-muted: #6f6660;
-  --color-border: #e8e1d9;
-  --color-accent: #b8543a;
-  --color-accent-dark: #8e3d28;
+  --color-text: #1d1d1f;
+  --color-text-muted: #6e6e73;
+  --color-border: #e3e3e8;
+  --color-accent: #c2185b;
+  --color-accent-dark: #9c1249;
+  --color-highlight: #fce4ec;
 
-  --color-stock-in-bg: #e5f2ea;
-  --color-stock-in-fg: #2f7a4f;
-  --color-stock-out-bg: #efeae5;
-  --color-stock-out-fg: #8a817a;
+  --color-stock-in-bg: #e6f4ec;
+  --color-stock-in-fg: #1a7f37;
+  --color-stock-out-bg: #ededf0;
+  --color-stock-out-fg: #6e6e73;
   --color-stock-unknown-bg: #fbf1d3;
   --color-stock-unknown-fg: #6b5310;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --shadow-tile: 0 1px 2px rgb(0 0 0 / 4%), 0 4px 16px rgb(0 0 0 / 5%);
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic',
     sans-serif;
@@ -51,6 +57,52 @@ button {
 button:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
+}
+
+/* 형광펜은 글자 뒤 칸을 왼쪽에서 오른쪽으로 늘려 칠한다. 감싼 상자에 isolation: isolate가 있어야 배경 뒤로 숨지 않는다. */
+mark {
+  position: relative;
+  padding: 0 2px;
+  background: none;
+  color: inherit;
+}
+
+mark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 3px;
+  background: var(--color-highlight);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-accent) 35%, transparent);
+  transform-origin: left center;
+  animation: mark-in 300ms var(--ease-out) calc(var(--enter-delay, 0ms) + 240ms) both;
+}
+
+@keyframes mark-in { from { transform: scaleX(0); } }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* 누르는 동작의 주 버튼은 로즈 알약 하나로 통일한다. */
+.btn-primary {
+  min-height: 44px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  transition: transform 120ms var(--ease-out), background-color 150ms ease;
+}
+
+.btn-primary:hover:not(:disabled) { background: var(--color-accent-dark); }
+.btn-primary:active:not(:disabled) { transform: scale(0.97); }
+.btn-primary:disabled { background: var(--color-stock-out-bg); color: var(--color-text-muted); cursor: not-allowed; }
+
+/* 동작 줄이기를 켠 사람에게는 움직임을 빼고, 나타나는 것은 투명도만 바꾼다. */
+@media (prefers-reduced-motion: reduce) {
+  mark::before { animation: none; }
+  .btn-primary:active:not(:disabled) { transform: none; }
 }
 
 .sr-only {
