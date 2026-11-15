@@ -8,9 +8,14 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
-      // agent-service에 CORS 설정이 없어서 개발 서버가 /api 요청을 대신 넘긴다.
+      // Gateway가 채팅·피부 분석·상품·재고·주문을 경로별 서비스로 나눈다.
+      // 팀 서버에서는 Caddy의 HTTPS/Basic 인증을 거쳐 같은 Gateway로 간다.
       proxy: {
-        '/api': env.AGENT_SERVICE_URL || 'http://127.0.0.1:8000',
+        '/api': {
+          target: env.GATEWAY_SERVICE_URL || 'http://127.0.0.1:8080',
+          changeOrigin: true,
+          auth: env.BE_BASIC_AUTH || undefined,
+        },
       },
     },
   }

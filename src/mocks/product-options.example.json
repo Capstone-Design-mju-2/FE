@@ -1,0 +1,21 @@
+{
+  "101": {
+    "label": "용량",
+    "options": [
+      { "optionId": 1011, "name": "50ml", "soldOut": false },
+      { "optionId": 1012, "name": "80ml", "soldOut": false },
+      { "optionId": 1013, "name": "100ml", "soldOut": true }
+    ]
+  },
+  "102": {
+    "label": "용량",
+    "options": [{ "optionId": 1021, "name": "60ml", "soldOut": true }]
+  },
+  "103": {
+    "label": "호수",
+    "options": [
+      { "optionId": 1031, "name": "21호 라이트", "soldOut": false },
+      { "optionId": 1032, "name": "23호 내추럴", "soldOut": true }
+    ]
+  }
+}
