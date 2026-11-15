@@ -83,7 +83,7 @@ function Home({ examples, loading, onAsk }: Props) {
         <main>
           <section className="home__hero">
             <div className="home__hero-inner">
-              <h1>리뷰 수백 개,<br />대신 읽고 골라 드릴게요</h1>
+              <h1>궁금한 건<br />그냥 물어보세요</h1>
               <p className="home__lead">리뷰 80만 개에서 내 피부와 사용감, 예산에 맞는 화장품을 찾고 재고와 도착일까지 확인해요.</p>
               <div className="home__search">
                 <ChatInput inputRef={inputRef} value={input} disabled={loading} onChange={setInput}
