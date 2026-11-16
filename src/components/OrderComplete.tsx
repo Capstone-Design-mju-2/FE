@@ -7,7 +7,11 @@ export default function OrderComplete({ receipt, onClose }: Props) {
   return (
     <>
       <div className="order-sheet__body order-complete">
-        <div className="order-complete__mark" aria-hidden="true">✓</div>
+        <div className="order-complete__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" />
+          </svg>
+        </div>
         <h3>체험 주문이 완료됐어요</h3>
         <p className="order-sheet__trial">{receipt.serverAccepted
           ? '체험 주문이 서버에 접수되고 재고가 차감됐어요. 결제·실제 배송은 이루어지지 않아요.'

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   HOME_CATEGORIES, PRODUCT_SORTS, RANKING_TABS, categoryLabel, formatReviewScore,
 } from '../lib/catalog'
@@ -20,6 +20,19 @@ type Props = {
 const useMock = import.meta.env.VITE_USE_MOCK === 'true'
 const CATEGORY_PAGE_SIZE = 10
 const RANKING_SIZE = 5
+const TAB_SLIDE_MS = 220
+
+// "이렇게 골라요" 구역의 예시. 리뷰 문장은 상품 818의 실제 리뷰(109245) 원문이라 줄이거나 고치지 않는다.
+const HOW_EXAMPLE = {
+  question: '건성 피부에 끈적이지 않는 수분크림 중 내일 도착 가능한 거',
+  brand: '토리든',
+  name: '밸런스풀 시카 진정 크림 80ml',
+  review: '여름에 피부 진정용으로 매우 좋아요 흡수도 잘 되고 끈적이지 않아요',
+  price: 16600,
+}
+
+// 첫 화면 등장은 페이지를 처음 열 때 한 번만 한다. 채팅에서 홈으로 돌아올 때는 하지 않는다.
+let heroRevealed = false
 
 // 홈에서 보여 주는 추천 예시. 11/14 시연 서버가 이 질문에 답한 카드의 리뷰 근거를 줄이지 않고 옮겼다.
 const SHOWCASE = {
@@ -45,6 +58,42 @@ function Home({ examples, loading, onAsk }: Props) {
   const categoryList = useProducts(category, categorySort, CATEGORY_PAGE_SIZE, categoryAttempt)
   const ranking = useProducts(rankTab, 'popular', RANKING_SIZE, rankAttempt)
 
+  const [reveal] = useState(() => !heroRevealed)
+  useEffect(() => {
+    heroRevealed = true
+  }, [])
+
+  // 랭킹 탭의 선택 표시는 누른 탭 크기로 바로 바꾸고, 바뀌는 동안만 transform으로 이전 자리에서 옮겨 온다.
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const indicatorRef = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const tabs = tabsRef.current
+    const indicator = indicatorRef.current
+    if (!tabs || !indicator) return
+    const place = (animate: boolean) => {
+      const pressed = tabs.querySelector<HTMLElement>('[aria-pressed="true"]')
+      if (!pressed) return
+      const before = indicator.getBoundingClientRect()
+      const to = `translate(${pressed.offsetLeft}px, ${pressed.offsetTop}px)`
+      indicator.style.width = `${pressed.offsetWidth}px`
+      indicator.style.height = `${pressed.offsetHeight}px`
+      indicator.style.transform = to
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (!animate || before.width === 0 || reduced) return
+      const after = indicator.getBoundingClientRect()
+      const dx = pressed.offsetLeft + before.left - after.left
+      const dy = pressed.offsetTop + before.top - after.top
+      indicator.animate(
+        [{ transform: `translate(${dx}px, ${dy}px) scaleX(${before.width / after.width})` }, { transform: to }],
+        { duration: TAB_SLIDE_MS, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
+      )
+    }
+    place(true)
+    const observer = new ResizeObserver(() => place(false))
+    observer.observe(tabs)
+    return () => observer.disconnect()
+  }, [rankTab])
+
   // 리뷰 패널: 열린 동안 메인은 inert, 닫히면 누른 상품 카드로 포커스를 돌린다.
   const [reviewProduct, setReviewProduct] = useState<ProductSummary | null>(null)
   const reviewOpenerRef = useRef<HTMLElement | null>(null)
@@ -68,7 +117,7 @@ function Home({ examples, loading, onAsk }: Props) {
 
   return (
     <>
-      <div className="home" inert={reviewProduct !== null}>
+      <div className={`home${reveal ? ' home--reveal' : ''}`} inert={reviewProduct !== null}>
         <header className="home__header">
           <div className="home__header-inner">
             <a className="home__brand" href="#home">PeauPick</a>
@@ -102,7 +151,8 @@ function Home({ examples, loading, onAsk }: Props) {
           <div className="home__showcase-wrap">
             <button type="button" className="home__showcase" onClick={() => ask(SHOWCASE.question)} disabled={loading}>
               <span className="home__showcase-photo" aria-hidden="true">
-                <ProductImage product={SHOWCASE.image} className="home__showcase-img" sizes="300px" fallback={null} />
+                <ProductImage product={SHOWCASE.image} className="home__showcase-img" sizes="300px" fallback={null}
+                  priority />
               </span>
               <span className="home__showcase-body">
                 <span className="home__showcase-question">{SHOWCASE.question}</span>
@@ -116,6 +166,42 @@ function Home({ examples, loading, onAsk }: Props) {
               </span>
             </button>
           </div>
+
+          <section className="home__how" aria-labelledby="home-how-title">
+            <div className="home__how-intro">
+              <h2 id="home-how-title">이렇게 골라요</h2>
+              <p>리뷰 801,690건에서 질문에 맞는 리뷰를 찾고, 재고와 도착일까지 확인해요.</p>
+            </div>
+            <ol className="home__how-steps">
+              <li className="home__how-step">
+                <h3><span className="home__how-num" aria-hidden="true">1</span>말로 물어요</h3>
+                <p>피부 타입, 사용감, 예산, 도착일을 한 문장으로 적으면 돼요.</p>
+                <div className="home__how-sample">
+                  <span className="home__how-bubble">{HOW_EXAMPLE.question}</span>
+                </div>
+              </li>
+              <li className="home__how-step">
+                <h3><span className="home__how-num" aria-hidden="true">2</span>리뷰에서 근거를 찾아요</h3>
+                <p>상품마다 실제 구매 리뷰를 근거로 보여 주고, 질문에 나온 말을 칠해요.</p>
+                <div className="home__how-sample">
+                  <span className="home__how-brand">{HOW_EXAMPLE.brand}</span>
+                  <span className="home__how-name">{HOW_EXAMPLE.name}</span>
+                  <q className="home__how-quote">
+                    {highlight(HOW_EXAMPLE.review, highlightTerms(HOW_EXAMPLE.question)).map((part, i) =>
+                      part.marked ? <mark key={i}>{part.text}</mark> : part.text)}
+                  </q>
+                </div>
+              </li>
+              <li className="home__how-step">
+                <h3><span className="home__how-num" aria-hidden="true">3</span>재고를 보고 주문해요</h3>
+                <p>재고와 도착일을 확인하고 결제 없이 체험 주문해요. 그사이 품절되면 같은 조건으로 다른 상품을 찾아요.</p>
+                <div className="home__how-sample home__how-buy">
+                  <strong>{formatPrice(HOW_EXAMPLE.price)}</strong>
+                  <span className="home__how-stock">재고 있음 · 내일 도착</span>
+                </div>
+              </li>
+            </ol>
+          </section>
 
           <div className="home__content">
             {useMock && (
@@ -174,7 +260,8 @@ function Home({ examples, loading, onAsk }: Props) {
                   <h2 id="home-ranking-title">지금 리뷰가 많은 {categoryLabel(rankTab)}</h2>
                   <p>무신사 리뷰 수 순서, 수집한 날 기준</p>
                 </div>
-                <div className="home__rank-tabs" role="group" aria-label="랭킹 카테고리">
+                <div className="home__rank-tabs" role="group" aria-label="랭킹 카테고리" ref={tabsRef}>
+                  <span className="home__rank-indicator" ref={indicatorRef} aria-hidden="true" />
                   {RANKING_TABS.map((code) => (
                     <button key={code} type="button" aria-pressed={rankTab === code}
                       onClick={() => setRankTab(code)}>{categoryLabel(code)}</button>
@@ -206,7 +293,21 @@ function ProductGrid({ list, ranked = false, onOpen, onRetry, emptyText }: {
   onRetry: () => void
   emptyText: string
 }) {
-  if (list.loading) return <p className="home__state" role="status">상품을 불러오는 중이에요.</p>
+  // 탭·정렬을 바꿔 새 목록을 불러오는 동안 앞 목록을 흐리게 남겨, 구역 높이와 스크롤 위치가 튀지 않게 한다.
+  // 첫 상품이 달라지면 새 목록으로 바뀐 것(전부 떠오름), 같고 길어지면 "더 보기"로 붙은 것(붙은 카드만 떠오름)으로 본다.
+  const [shown, setShown] = useState<ProductSummary[]>([])
+  const [swapped, setSwapped] = useState(false)
+  const [appendedFrom, setAppendedFrom] = useState<number | null>(null)
+  const settled = !list.loading && list.products !== shown && (list.products.length > 0 || shown.length > 0)
+  if (settled) {
+    const sameStart = shown.length > 0 && list.products[0]?.productId === shown[0].productId
+    setSwapped(shown.length > 0 && !sameStart)
+    setAppendedFrom(sameStart && list.products.length > shown.length ? shown.length : null)
+    setShown(list.products)
+  }
+
+  const stale = list.loading && shown.length > 0
+  if (list.loading && !stale) return <p className="home__state" role="status">상품을 불러오는 중이에요.</p>
   if (list.error) {
     return (
       <div className="home__state" role="alert">
@@ -215,24 +316,32 @@ function ProductGrid({ list, ranked = false, onOpen, onRetry, emptyText }: {
       </div>
     )
   }
-  if (list.products.length === 0) return <p className="home__state">{emptyText}</p>
+  const products = stale ? shown : list.products
+  if (products.length === 0) return <p className="home__state">{emptyText}</p>
   return (
-    <div className="home__product-grid">
-      {list.products.map((product, index) => (
+    <div className={`home__product-grid${stale ? ' is-stale' : swapped ? ' is-swapped' : ''}`} aria-busy={stale}>
+      {stale && <p className="sr-only" role="status">상품을 불러오는 중이에요.</p>}
+      {products.map((product, index) => (
         <HomeProductCard key={product.productId} product={product} rank={ranked ? index + 1 : undefined}
+          enter={appendedFrom !== null && index >= appendedFrom ? index - appendedFrom : undefined}
           onOpen={onOpen} />
       ))}
     </div>
   )
 }
 
-function HomeProductCard({ product, rank, onOpen }: {
+// enter: "더 보기"로 붙은 카드 안에서의 순서. 30ms 간격으로 떠오르되 10장째부터는 같은 때(전체 0.5초 안).
+function HomeProductCard({ product, rank, enter, onOpen }: {
   product: ProductSummary
   rank?: number
+  enter?: number
   onOpen: (product: ProductSummary) => void
 }) {
+  const entering = enter !== undefined
   return (
-    <button type="button" className="home-product" onClick={() => onOpen(product)}>
+    <button type="button" className={`home-product${entering ? ' home-product--new' : ''}`}
+      style={entering ? { '--enter-i': Math.min(enter, 9) } as CSSProperties : undefined}
+      onClick={() => onOpen(product)}>
       <span className="home-product__image" aria-hidden="true">
         <ProductImage product={product} className="home-product__photo"
           sizes="(max-width: 360px) 90vw, (max-width: 760px) 45vw, 240px"

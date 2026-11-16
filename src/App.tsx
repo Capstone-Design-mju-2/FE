@@ -249,16 +249,17 @@ function App() {
 
             {loading && (
               <div className="loading">
-                <div className="loading__card" aria-hidden="true" />
-                <div className="loading__card" aria-hidden="true" />
-                <p className="loading__text">
-                  <span className="loading__dots" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </span>
-                  찾고 있어요…
-                </p>
+                <p className="loading__text">찾고 있어요…</p>
+                {[0, 1].map((i) => (
+                  <div key={i} className="loading__card" aria-hidden="true">
+                    <span className="loading__thumb" />
+                    <span className="loading__lines">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
             <div ref={bottomRef} />
