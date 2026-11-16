@@ -22,6 +22,15 @@ const CATEGORY_PAGE_SIZE = 10
 const RANKING_SIZE = 5
 const TAB_SLIDE_MS = 220
 
+// "이렇게 골라요" 구역의 예시. 리뷰 문장은 상품 818의 실제 리뷰(109245) 원문이라 줄이거나 고치지 않는다.
+const HOW_EXAMPLE = {
+  question: '건성 피부에 끈적이지 않는 수분크림 중 내일 도착 가능한 거',
+  brand: '토리든',
+  name: '밸런스풀 시카 진정 크림 80ml',
+  review: '여름에 피부 진정용으로 매우 좋아요 흡수도 잘 되고 끈적이지 않아요',
+  price: 16600,
+}
+
 // 첫 화면 등장은 페이지를 처음 열 때 한 번만 한다. 채팅에서 홈으로 돌아올 때는 하지 않는다.
 let heroRevealed = false
 
@@ -156,6 +165,42 @@ function Home({ examples, loading, onAsk }: Props) {
               </span>
             </button>
           </div>
+
+          <section className="home__how" aria-labelledby="home-how-title">
+            <div className="home__how-intro">
+              <h2 id="home-how-title">이렇게 골라요</h2>
+              <p>리뷰 801,690건에서 질문에 맞는 리뷰를 찾고, 재고와 도착일까지 확인해요.</p>
+            </div>
+            <ol className="home__how-steps">
+              <li className="home__how-step">
+                <h3><span className="home__how-num" aria-hidden="true">1</span>말로 물어요</h3>
+                <p>피부 타입, 사용감, 예산, 도착일을 한 문장으로 적으면 돼요.</p>
+                <div className="home__how-sample">
+                  <span className="home__how-bubble">{HOW_EXAMPLE.question}</span>
+                </div>
+              </li>
+              <li className="home__how-step">
+                <h3><span className="home__how-num" aria-hidden="true">2</span>리뷰에서 근거를 찾아요</h3>
+                <p>상품마다 실제 구매 리뷰를 근거로 보여 주고, 질문에 나온 말을 칠해요.</p>
+                <div className="home__how-sample">
+                  <span className="home__how-brand">{HOW_EXAMPLE.brand}</span>
+                  <span className="home__how-name">{HOW_EXAMPLE.name}</span>
+                  <q className="home__how-quote">
+                    {highlight(HOW_EXAMPLE.review, highlightTerms(HOW_EXAMPLE.question)).map((part, i) =>
+                      part.marked ? <mark key={i}>{part.text}</mark> : part.text)}
+                  </q>
+                </div>
+              </li>
+              <li className="home__how-step">
+                <h3><span className="home__how-num" aria-hidden="true">3</span>재고를 보고 주문해요</h3>
+                <p>재고와 도착일을 확인하고 결제 없이 체험 주문해요. 그사이 품절되면 같은 조건으로 다른 상품을 찾아요.</p>
+                <div className="home__how-sample home__how-buy">
+                  <strong>{formatPrice(HOW_EXAMPLE.price)}</strong>
+                  <span className="home__how-stock">재고 있음 · 내일 도착</span>
+                </div>
+              </li>
+            </ol>
+          </section>
 
           <div className="home__content">
             {useMock && (
