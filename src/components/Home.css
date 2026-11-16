@@ -368,9 +368,6 @@
   background: currentColor;
 }
 
-/* 이 구역의 형광펜은 화면이 열릴 때가 아니라 스크롤로 카드가 들어올 때 칠한다. */
-.home__how mark::before { animation: none; }
-
 /* 기본은 다 보이는 상태. 스크롤 애니메이션을 지원하고, 동작 줄이기가 꺼져 있고, 화면이 넓을 때만 움직인다.
    animation 묶음 속성이 animation-timeline을 지우므로 timeline과 range는 그 뒤에 쓴다. */
 @supports (animation-timeline: view()) {
@@ -380,12 +377,6 @@
       animation: how-step-in linear both;
       animation-timeline: --how-step;
       animation-range: entry 0% entry 70%;
-    }
-
-    .home__how mark::before {
-      animation: mark-in linear both;
-      animation-timeline: --how-step;
-      animation-range: entry 60% cover 45%;
     }
 
     @keyframes how-step-in { from { opacity: 0.3; transform: translateY(16px); } }
