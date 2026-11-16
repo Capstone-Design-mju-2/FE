@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import {
   HOME_CATEGORIES, PRODUCT_SORTS, RANKING_TABS, categoryLabel, formatReviewScore,
 } from '../lib/catalog'
@@ -293,12 +293,15 @@ function ProductGrid({ list, ranked = false, onOpen, onRetry, emptyText }: {
   emptyText: string
 }) {
   // 탭·정렬을 바꿔 새 목록을 불러오는 동안 앞 목록을 흐리게 남겨, 구역 높이와 스크롤 위치가 튀지 않게 한다.
-  // 첫 상품이 달라졌을 때만 새 목록으로 바뀐 것으로 본다. "더 보기"로 뒤에 붙은 상품은 떠오르지 않는다.
+  // 첫 상품이 달라지면 새 목록으로 바뀐 것(전부 떠오름), 같고 길어지면 "더 보기"로 붙은 것(붙은 카드만 떠오름)으로 본다.
   const [shown, setShown] = useState<ProductSummary[]>([])
   const [swapped, setSwapped] = useState(false)
+  const [appendedFrom, setAppendedFrom] = useState<number | null>(null)
   const settled = !list.loading && list.products !== shown && (list.products.length > 0 || shown.length > 0)
   if (settled) {
-    setSwapped(shown.length > 0 && list.products[0]?.productId !== shown[0].productId)
+    const sameStart = shown.length > 0 && list.products[0]?.productId === shown[0].productId
+    setSwapped(shown.length > 0 && !sameStart)
+    setAppendedFrom(sameStart && list.products.length > shown.length ? shown.length : null)
     setShown(list.products)
   }
 
@@ -319,19 +322,25 @@ function ProductGrid({ list, ranked = false, onOpen, onRetry, emptyText }: {
       {stale && <p className="sr-only" role="status">상품을 불러오는 중이에요.</p>}
       {products.map((product, index) => (
         <HomeProductCard key={product.productId} product={product} rank={ranked ? index + 1 : undefined}
+          enter={appendedFrom !== null && index >= appendedFrom ? index - appendedFrom : undefined}
           onOpen={onOpen} />
       ))}
     </div>
   )
 }
 
-function HomeProductCard({ product, rank, onOpen }: {
+// enter: "더 보기"로 붙은 카드 안에서의 순서. 30ms 간격으로 떠오르되 10장째부터는 같은 때(전체 0.5초 안).
+function HomeProductCard({ product, rank, enter, onOpen }: {
   product: ProductSummary
   rank?: number
+  enter?: number
   onOpen: (product: ProductSummary) => void
 }) {
+  const entering = enter !== undefined
   return (
-    <button type="button" className="home-product" onClick={() => onOpen(product)}>
+    <button type="button" className={`home-product${entering ? ' home-product--new' : ''}`}
+      style={entering ? { '--enter-i': Math.min(enter, 9) } as CSSProperties : undefined}
+      onClick={() => onOpen(product)}>
       <span className="home-product__image" aria-hidden="true">
         <ProductImage product={product} className="home-product__photo"
           sizes="(max-width: 360px) 90vw, (max-width: 760px) 45vw, 240px"

@@ -535,7 +535,7 @@
   pointer-events: none;
 }
 
-.home__product-grid.is-swapped .home-product { animation: card-swap 220ms var(--ease-out) both; }
+.home__product-grid.is-swapped .home-product { animation: card-swap 220ms var(--ease-out) backwards; }
 .home__product-grid.is-swapped .home-product:nth-child(2) { animation-delay: 30ms; }
 .home__product-grid.is-swapped .home-product:nth-child(3) { animation-delay: 60ms; }
 .home__product-grid.is-swapped .home-product:nth-child(4) { animation-delay: 90ms; }
@@ -544,9 +544,16 @@
 
 @keyframes card-swap { from { opacity: 0; transform: translateY(6px); } }
 
+/* "더 보기"로 붙은 카드만 같은 방식으로 떠오른다. 순서(--enter-i)는 Home.tsx가 붙인다. */
+.home-product--new {
+  animation: card-swap 220ms var(--ease-out) backwards;
+  animation-delay: calc(var(--enter-i, 0) * 30ms);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home__product-grid { transition: none; }
-  .home__product-grid.is-swapped .home-product { animation-name: fade-in; }
+  .home__product-grid.is-swapped .home-product,
+  .home-product--new { animation-name: fade-in; }
 }
 
 .home-product {
