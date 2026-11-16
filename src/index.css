@@ -81,6 +81,14 @@ mark::before {
 }
 
 @keyframes mark-in { from { transform: scaleX(0); } }
+
+/* 상품 사진은 도착하면 서서히 나타난다. 도착 전에는 사진을 감싼 칸의 바탕색이 보인다. */
+.product-image {
+  opacity: 0;
+  transition: opacity 220ms var(--ease-out);
+}
+
+.product-image.is-loaded { opacity: 1; }
 @keyframes fade-in { from { opacity: 0; } }
 
 /* 누르는 동작의 주 버튼은 로즈 알약 하나로 통일한다. */
@@ -103,6 +111,7 @@ mark::before {
 /* 동작 줄이기를 켠 사람에게는 움직임을 빼고, 나타나는 것은 투명도만 바꾼다. */
 @media (prefers-reduced-motion: reduce) {
   mark::before { animation: none; }
+  .product-image { transition: none; }
   .btn-primary:active:not(:disabled) { transform: none; }
 }
 

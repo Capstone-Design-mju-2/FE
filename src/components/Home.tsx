@@ -151,7 +151,8 @@ function Home({ examples, loading, onAsk }: Props) {
           <div className="home__showcase-wrap">
             <button type="button" className="home__showcase" onClick={() => ask(SHOWCASE.question)} disabled={loading}>
               <span className="home__showcase-photo" aria-hidden="true">
-                <ProductImage product={SHOWCASE.image} className="home__showcase-img" sizes="300px" fallback={null} />
+                <ProductImage product={SHOWCASE.image} className="home__showcase-img" sizes="300px" fallback={null}
+                  priority />
               </span>
               <span className="home__showcase-body">
                 <span className="home__showcase-question">{SHOWCASE.question}</span>
