@@ -202,6 +202,192 @@
   .home__category:active .home__category-icon { transform: none; }
 }
 
+/* 처음 열 때 제목, 설명, 검색창, 예시 질문, 추천 예시가 80ms 간격으로 떠오른다(모두 0.74초 안). */
+.home--reveal .home__hero-inner > *,
+.home--reveal .home__showcase-wrap {
+  animation: hero-rise 420ms var(--ease-out) both;
+}
+
+.home--reveal .home__hero-inner > :nth-child(2) { animation-delay: 80ms; }
+.home--reveal .home__hero-inner > :nth-child(3) { animation-delay: 160ms; }
+.home--reveal .home__hero-inner > :nth-child(4) { animation-delay: 240ms; }
+.home--reveal .home__showcase-wrap { animation-delay: 320ms; }
+
+/* 추천 예시의 형광펜은 타일이 자리 잡은 뒤(320ms + 420ms) 칠한다. mark-in은 --enter-delay에 240ms를 더해 시작한다. */
+.home--reveal .home__showcase-quote { --enter-delay: 500ms; }
+
+@keyframes hero-rise { from { opacity: 0; transform: translateY(12px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .home--reveal .home__hero-inner > *,
+  .home--reveal .home__showcase-wrap { animation: none; }
+}
+
+/* 이렇게 골라요: 왼쪽 설명은 붙어 있고, 오른쪽 세 단계가 스크롤에 따라 나타난다. */
+.home__how {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 56px;
+  max-width: 1200px;
+  margin: 72px auto 0;
+  padding: 0 32px;
+}
+
+.home__how-intro {
+  position: sticky;
+  top: 88px;
+  align-self: start;
+  padding-top: 24px;
+}
+
+.home__how-intro h2 {
+  margin: 0 0 12px;
+  font-size: 40px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.home__how-intro p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.home__how-steps {
+  display: grid;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home__how-step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 32px;
+  border-radius: 28px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-tile);
+}
+
+.home__how-step h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.home__how-num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-highlight);
+  color: var(--color-accent-dark);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.home__how-step > p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.home__how-sample {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 20px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.home__how-bubble {
+  align-self: flex-end;
+  max-width: 90%;
+  padding: 10px 16px;
+  border-radius: 20px 20px 6px 20px;
+  background: var(--color-text);
+  color: #fff;
+  font-size: 15px;
+}
+
+.home__how-brand {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.home__how-name {
+  margin-bottom: 6px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.home__how-quote {
+  font-size: 16px;
+  line-height: 1.6;
+  isolation: isolate;
+}
+
+.home__how-buy {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home__how-buy strong { font-size: 19px; }
+
+.home__how-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-stock-in-fg);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.home__how-stock::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* 이 구역의 형광펜은 화면이 열릴 때가 아니라 스크롤로 카드가 들어올 때 칠한다. */
+.home__how mark::before { animation: none; }
+
+/* 기본은 다 보이는 상태. 스크롤 애니메이션을 지원하고, 동작 줄이기가 꺼져 있고, 화면이 넓을 때만 움직인다.
+   animation 묶음 속성이 animation-timeline을 지우므로 timeline과 range는 그 뒤에 쓴다. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 40rem) {
+    .home__how-step {
+      view-timeline: --how-step block;
+      animation: how-step-in linear both;
+      animation-timeline: --how-step;
+      animation-range: entry 0% entry 70%;
+    }
+
+    .home__how mark::before {
+      animation: mark-in linear both;
+      animation-timeline: --how-step;
+      animation-range: entry 60% cover 45%;
+    }
+
+    @keyframes how-step-in { from { opacity: 0.3; transform: translateY(16px); } }
+  }
+}
+
 .home__content {
   display: flex;
   flex-direction: column;
@@ -340,6 +526,34 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
+  transition: opacity 120ms var(--ease-out);
+}
+
+/* 다른 목록을 불러오는 동안 앞 목록은 흐리게 남고, 새 목록의 카드는 30ms 간격으로 떠오른다. */
+.home__product-grid.is-stale {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.home__product-grid.is-swapped .home-product { animation: card-swap 220ms var(--ease-out) backwards; }
+.home__product-grid.is-swapped .home-product:nth-child(2) { animation-delay: 30ms; }
+.home__product-grid.is-swapped .home-product:nth-child(3) { animation-delay: 60ms; }
+.home__product-grid.is-swapped .home-product:nth-child(4) { animation-delay: 90ms; }
+.home__product-grid.is-swapped .home-product:nth-child(5) { animation-delay: 120ms; }
+.home__product-grid.is-swapped .home-product:nth-child(n + 6) { animation-delay: 150ms; }
+
+@keyframes card-swap { from { opacity: 0; transform: translateY(6px); } }
+
+/* "더 보기"로 붙은 카드만 같은 방식으로 떠오른다. 순서(--enter-i)는 Home.tsx가 붙인다. */
+.home-product--new {
+  animation: card-swap 220ms var(--ease-out) backwards;
+  animation-delay: calc(var(--enter-i, 0) * 30ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home__product-grid { transition: none; }
+  .home__product-grid.is-swapped .home-product,
+  .home-product--new { animation-name: fade-in; }
 }
 
 .home-product {
@@ -425,6 +639,7 @@
 }
 
 .home__rank-tabs {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   padding: 3px;
@@ -432,7 +647,20 @@
   background: rgb(0 0 0 / 5%);
 }
 
+/* 선택 표시는 탭 뒤에 깔린 흰 알약 하나다. 자리와 크기는 Home.tsx가 누른 탭에 맞춘다. */
+.home__rank-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
 .home__rank-tabs button {
+  position: relative;
   min-height: 34px;
   padding: 6px 16px;
   border: 0;
@@ -440,11 +668,10 @@
   background: none;
   color: var(--color-text-muted);
   font-size: 14px;
+  transition: color 220ms var(--ease-out);
 }
 
 .home__rank-tabs button[aria-pressed="true"] {
-  background: var(--color-surface);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
   color: var(--color-text);
   font-weight: 600;
 }
@@ -462,6 +689,8 @@
 @media (max-width: 900px) {
   .home__showcase { grid-template-columns: 1fr; gap: 24px; padding: 24px; }
   .home__showcase-photo { width: min(100%, 280px); }
+  .home__how { grid-template-columns: 1fr; gap: 24px; }
+  .home__how-intro { position: static; padding-top: 0; }
 }
 
 @media (max-width: 760px) {
@@ -479,6 +708,11 @@
   .home__showcase-wrap { padding: 0 16px; }
   .home__showcase-name { font-size: 22px; }
   .home__showcase-quote { font-size: 16px; }
+  .home__how { margin-top: 48px; padding: 0 16px; }
+  .home__how-intro h2 { font-size: 28px; }
+  .home__how-intro p { font-size: 16px; }
+  .home__how-step { padding: 22px; border-radius: 22px; }
+  .home__how-step h3 { font-size: 20px; }
   .home__content { gap: 40px; padding: 32px 16px 48px; }
   .home__categories { gap: 4px; }
   .home__category { font-size: 12px; }

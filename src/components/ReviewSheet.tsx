@@ -3,7 +3,7 @@ import { fetchReviews } from '../api/catalog'
 import { ApiRequestError } from '../api/client'
 import { REVIEW_SORTS, SKIN_TYPES, formatReviewScore, hasMorePages, skinTypeLabel } from '../lib/catalog'
 import { formatPrice } from '../lib/format'
-import { useDialog } from '../lib/useDialog'
+import { useDialog, useSheetClose } from '../lib/useDialog'
 import type { ProductSummary, Review, ReviewSort, SkinType } from '../types/catalog'
 import ProductImage from './ProductImage'
 import './OrderSheet.css'
@@ -33,7 +33,8 @@ function ReviewSheet({ product, onClose }: Props) {
   // 정렬·필터를 빠르게 바꿨을 때 늦게 온 이전 응답이 화면을 덮지 않게 한다.
   const requestRef = useRef(0)
 
-  useDialog(panelRef, closeRef, onClose)
+  const { closing, close } = useSheetClose(onClose)
+  useDialog(panelRef, closeRef, close)
 
   // 정렬·필터·재시도를 바꾸면 첫 페이지부터 다시 불러온다. 로딩 표시는 바꾸는 쪽에서 켠다.
   const reload = (change: () => void) => {
@@ -74,12 +75,12 @@ function ReviewSheet({ product, onClose }: Props) {
   }
 
   return (
-    <div className="order-sheet">
-      <div className="order-sheet__backdrop" onClick={onClose} aria-hidden="true" />
+    <div className={`order-sheet${closing ? ' is-closing' : ''}`}>
+      <div className="order-sheet__backdrop" onClick={close} aria-hidden="true" />
       <section ref={panelRef} className="order-sheet__panel" role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <header className="order-sheet__header">
           <h2 id={titleId}>{product.name} 리뷰</h2>
-          <button ref={closeRef} type="button" className="order-sheet__close" onClick={onClose} aria-label="리뷰 닫기">
+          <button ref={closeRef} type="button" className="order-sheet__close" onClick={close} aria-label="리뷰 닫기">
             ✕
           </button>
         </header>
