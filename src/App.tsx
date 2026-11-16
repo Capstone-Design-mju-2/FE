@@ -242,7 +242,7 @@ function App() {
                 )
               }
               if (m.role === 'soldout') return <div key={m.id} className="notice" role="status">
-                <b>방금 품절됐어요</b><span className="notice__detail">{m.productName}을 제외하고 같은 조건으로 대안을 요청했어요.</span>
+                <b>방금 품절됐어요</b><span className="notice__detail">{m.productName}만 빼고 같은 조건으로 대안을 요청했어요.</span>
               </div>
               return <Answer key={m.id} response={m.response} origin={m.origin} onOrder={openOrder} />
             })}

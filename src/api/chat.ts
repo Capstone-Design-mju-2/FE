@@ -17,6 +17,14 @@ export async function sendChat(message: string, options: Omit<ChatRequest, 'mess
   return response
 }
 
+// 시연용 목업의 배송 예정일. 발표 날짜와 상관없이 "내일 도착"으로 보이게 오늘 기준 내일을 쓴다.
+// 원본 계약 fixture와 실제 API 값은 바꾸지 않는다.
+function tomorrowDate(): string {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
+}
+
 // 목업 모드에서 주소 뒤에 ?mock=<상황>을 붙이면 상태 화면을 BE 없이 확인할 수 있다.
 //   (없음)    목업 응답 그대로
 //   empty     결과 0개 (BE: 검색어를 못 뽑았거나 검색 결과가 없을 때)
@@ -28,22 +36,22 @@ async function mockChat(options: Omit<ChatRequest, 'message'>): Promise<ChatResp
   const base = exampleResponse as ChatResponse
   if (new URLSearchParams(window.location.search).get('mock') === 'alternatives') {
     const excluded = options.excludeProductIds ?? []
+    const date = tomorrowDate()
     return { ...base, answer: excluded.length ? '품절된 상품을 제외한 대안이에요.' : base.answer,
       searchConditions: options.searchConditions ?? { q: '수분크림' },
       products: base.products.filter((product) => !excluded.includes(product.productId)).map((product) =>
         excluded.length && product.productId === 103
-          ? { ...product, inventory: { status: 'IN_STOCK', quantity: 3, estimatedDeliveryDate: null } }
-          : product),
+          ? { ...product, inventory: { status: 'IN_STOCK', quantity: 3, estimatedDeliveryDate: date } }
+          : product.inventory.status === 'IN_STOCK'
+            ? { ...product, inventory: { ...product.inventory, estimatedDeliveryDate: date } }
+            : product),
     }
   }
   switch (new URLSearchParams(window.location.search).get('mock')) {
     case 'stage1a':
       return { ...base, products: base.products.map((p) => ({ ...p, reason: null })) }
     case 'stage1c': {
-      // 시연용 날짜만 상대 날짜로 만든다. 원본 계약 fixture와 실제 API 값은 유지한다.
-      const tomorrow = new Date()
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      const date = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
+      const date = tomorrowDate()
       return {
         ...base,
         products: base.products.map((p) => ({
