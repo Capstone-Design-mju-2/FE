@@ -1,4 +1,28 @@
-import { useEffect, type RefObject } from 'react'
+import { useCallback, useEffect, useState, type RefObject } from 'react'
+
+// OrderSheet.css의 나가는 움직임(sheet-out, fade-out) 시간과 같아야 한다.
+export const SHEET_EXIT_MS = 260
+
+// 창은 나가는 움직임이 끝난 뒤에 닫는다. 동작 줄이기를 켠 사람에게는 바로 닫는다.
+export function useSheetClose(onClose: () => void) {
+  const [closing, setClosing] = useState(false)
+
+  const close = useCallback(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      onClose()
+      return
+    }
+    setClosing(true)
+  }, [onClose])
+
+  useEffect(() => {
+    if (!closing) return
+    const timer = window.setTimeout(onClose, SHEET_EXIT_MS)
+    return () => window.clearTimeout(timer)
+  }, [closing, onClose])
+
+  return { closing, close }
+}
 
 // 패널 안에서 Tab으로 이동할 수 있는 요소
 const FOCUSABLE =

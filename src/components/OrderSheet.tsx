@@ -8,7 +8,7 @@ import type { MockOrderReceipt, ProductOptions } from '../types/order'
 import { formatDelivery, formatPrice } from '../lib/format'
 import { MAX_ORDER_QUANTITY, buildServerOrderReceipt, clampQuantity, firstAvailableOption, maxQuantity, newOrderRequestId } from '../lib/order'
 import { isSoldOutOrderFailure } from '../lib/alternatives'
-import { useDialog } from '../lib/useDialog'
+import { useDialog, useSheetClose } from '../lib/useDialog'
 import type { Product } from '../types/api'
 import './OrderSheet.css'
 
@@ -108,11 +108,12 @@ function OrderSheet({ product, onClose, onOrderComplete, onShowAlternatives, can
   }
 
   // 닫힌 뒤 포커스 복귀는 App이 맡는다.
-  useDialog(panelRef, closeRef, onClose, receipt)
+  const { closing, close } = useSheetClose(onClose)
+  useDialog(panelRef, closeRef, close, receipt)
 
   return (
-    <div className="order-sheet">
-      <div className="order-sheet__backdrop" onClick={onClose} aria-hidden="true" />
+    <div className={`order-sheet${closing ? ' is-closing' : ''}`}>
+      <div className="order-sheet__backdrop" onClick={close} aria-hidden="true" />
       <section
         ref={panelRef}
         className="order-sheet__panel"
@@ -122,12 +123,12 @@ function OrderSheet({ product, onClose, onOrderComplete, onShowAlternatives, can
       >
         <header className="order-sheet__header">
           <h2 id={titleId}>{receipt ? '주문 완료' : '주문 확인'}</h2>
-          <button ref={closeRef} type="button" className="order-sheet__close" onClick={onClose} aria-label={receipt ? '주문 완료 닫기' : '주문 확인 닫기'}>
+          <button ref={closeRef} type="button" className="order-sheet__close" onClick={close} aria-label={receipt ? '주문 완료 닫기' : '주문 확인 닫기'}>
             ✕
           </button>
         </header>
 
-        {receipt ? <OrderComplete receipt={receipt} onClose={onClose} /> : <>
+        {receipt ? <OrderComplete receipt={receipt} onClose={close} /> : <>
           <div className="order-sheet__body">
             <p className="order-sheet__trial">결제 없는 체험 주문입니다</p>
 

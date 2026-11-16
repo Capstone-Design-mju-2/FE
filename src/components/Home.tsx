@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   HOME_CATEGORIES, PRODUCT_SORTS, RANKING_TABS, categoryLabel, formatReviewScore,
 } from '../lib/catalog'
@@ -20,6 +20,10 @@ type Props = {
 const useMock = import.meta.env.VITE_USE_MOCK === 'true'
 const CATEGORY_PAGE_SIZE = 10
 const RANKING_SIZE = 5
+const TAB_SLIDE_MS = 220
+
+// 첫 화면 등장은 페이지를 처음 열 때 한 번만 한다. 채팅에서 홈으로 돌아올 때는 하지 않는다.
+let heroRevealed = false
 
 // 홈에서 보여 주는 추천 예시. 11/14 시연 서버가 이 질문에 답한 카드의 리뷰 근거를 줄이지 않고 옮겼다.
 const SHOWCASE = {
@@ -45,6 +49,42 @@ function Home({ examples, loading, onAsk }: Props) {
   const categoryList = useProducts(category, categorySort, CATEGORY_PAGE_SIZE, categoryAttempt)
   const ranking = useProducts(rankTab, 'popular', RANKING_SIZE, rankAttempt)
 
+  const [reveal] = useState(() => !heroRevealed)
+  useEffect(() => {
+    heroRevealed = true
+  }, [])
+
+  // 랭킹 탭의 선택 표시는 누른 탭 크기로 바로 바꾸고, 바뀌는 동안만 transform으로 이전 자리에서 옮겨 온다.
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const indicatorRef = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const tabs = tabsRef.current
+    const indicator = indicatorRef.current
+    if (!tabs || !indicator) return
+    const place = (animate: boolean) => {
+      const pressed = tabs.querySelector<HTMLElement>('[aria-pressed="true"]')
+      if (!pressed) return
+      const before = indicator.getBoundingClientRect()
+      const to = `translate(${pressed.offsetLeft}px, ${pressed.offsetTop}px)`
+      indicator.style.width = `${pressed.offsetWidth}px`
+      indicator.style.height = `${pressed.offsetHeight}px`
+      indicator.style.transform = to
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (!animate || before.width === 0 || reduced) return
+      const after = indicator.getBoundingClientRect()
+      const dx = pressed.offsetLeft + before.left - after.left
+      const dy = pressed.offsetTop + before.top - after.top
+      indicator.animate(
+        [{ transform: `translate(${dx}px, ${dy}px) scaleX(${before.width / after.width})` }, { transform: to }],
+        { duration: TAB_SLIDE_MS, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
+      )
+    }
+    place(true)
+    const observer = new ResizeObserver(() => place(false))
+    observer.observe(tabs)
+    return () => observer.disconnect()
+  }, [rankTab])
+
   // 리뷰 패널: 열린 동안 메인은 inert, 닫히면 누른 상품 카드로 포커스를 돌린다.
   const [reviewProduct, setReviewProduct] = useState<ProductSummary | null>(null)
   const reviewOpenerRef = useRef<HTMLElement | null>(null)
@@ -68,7 +108,7 @@ function Home({ examples, loading, onAsk }: Props) {
 
   return (
     <>
-      <div className="home" inert={reviewProduct !== null}>
+      <div className={`home${reveal ? ' home--reveal' : ''}`} inert={reviewProduct !== null}>
         <header className="home__header">
           <div className="home__header-inner">
             <a className="home__brand" href="#home">PeauPick</a>
@@ -174,7 +214,8 @@ function Home({ examples, loading, onAsk }: Props) {
                   <h2 id="home-ranking-title">지금 리뷰가 많은 {categoryLabel(rankTab)}</h2>
                   <p>무신사 리뷰 수 순서, 수집한 날 기준</p>
                 </div>
-                <div className="home__rank-tabs" role="group" aria-label="랭킹 카테고리">
+                <div className="home__rank-tabs" role="group" aria-label="랭킹 카테고리" ref={tabsRef}>
+                  <span className="home__rank-indicator" ref={indicatorRef} aria-hidden="true" />
                   {RANKING_TABS.map((code) => (
                     <button key={code} type="button" aria-pressed={rankTab === code}
                       onClick={() => setRankTab(code)}>{categoryLabel(code)}</button>

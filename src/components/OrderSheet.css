@@ -13,7 +13,7 @@
   animation: fade-in 300ms var(--ease-out) both;
 }
 
-/* 창은 오른쪽에서 미끄러져 들어온다. 닫을 때는 바로 사라진다(닫는 움직임은 창을 늦게 지워야 해서 넣지 않았다). */
+/* 창은 오른쪽에서 미끄러져 들어오고, 닫을 때는 들어올 때의 65% 시간으로 나간다(useSheetClose). */
 .order-sheet__panel {
   position: relative;
   display: flex;
@@ -27,6 +27,13 @@
 }
 
 @keyframes sheet-in { from { transform: translateX(100%); } }
+
+/* 시간은 useDialog.ts의 SHEET_EXIT_MS와 같다. */
+.order-sheet.is-closing .order-sheet__backdrop { animation: fade-out 260ms var(--ease-in) both; }
+.order-sheet.is-closing .order-sheet__panel { animation: sheet-out 260ms var(--ease-in) both; }
+
+@keyframes sheet-out { to { transform: translateX(100%); } }
+@keyframes fade-out { to { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   .order-sheet__panel { animation-name: fade-in; }
@@ -288,7 +295,31 @@
   border-radius: 50%;
   background: var(--color-stock-in-bg);
   color: var(--color-stock-in-fg);
-  font-size: 28px;
+  animation: mark-pop 420ms var(--ease-out) both;
+}
+
+/* 주문이 끝나면 동그라미가 커지며 나타나고, 그 안에 체크 표시가 그려진다. */
+.order-complete__mark svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.order-complete__mark path {
+  stroke-dasharray: 1;
+  animation: check-draw 300ms var(--ease-out) 180ms both;
+}
+
+@keyframes mark-pop { from { opacity: 0; transform: scale(0.6); } }
+@keyframes check-draw { from { stroke-dashoffset: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .order-complete__mark,
+  .order-complete__mark path { animation: none; }
 }
 .order-complete__number { margin: 0; font-size: 13px; color: var(--color-text-muted); }
 .order-complete__number strong { display: block; margin-top: 6px; overflow-wrap: anywhere; font-weight: 500; }
