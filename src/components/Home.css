@@ -185,6 +185,13 @@
   isolation: isolate;
 }
 
+.home__showcase-quote mark {
+  padding: 0;
+  color: var(--color-accent);
+}
+
+.home__showcase-quote mark::before { content: none; }
+
 /* 누르는 타일은 눌리는 순간 살짝 작아져 반응을 바로 보여 준다. */
 .home__showcase,
 .home-product,
@@ -212,9 +219,6 @@
 .home--reveal .home__hero-inner > :nth-child(3) { animation-delay: 160ms; }
 .home--reveal .home__hero-inner > :nth-child(4) { animation-delay: 240ms; }
 .home--reveal .home__showcase-wrap { animation-delay: 320ms; }
-
-/* 추천 예시의 형광펜은 타일이 자리 잡은 뒤(320ms + 420ms) 칠한다. mark-in은 --enter-delay에 240ms를 더해 시작한다. */
-.home--reveal .home__showcase-quote { --enter-delay: 500ms; }
 
 @keyframes hero-rise { from { opacity: 0; transform: translateY(12px); } }
 
