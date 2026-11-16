@@ -1,8 +1,12 @@
 name: Deploy
 
 # 시연 서버에서 API와 같은 주소로 나가는 FE 빌드를 바꾼다.
+# dev에 머지되면 바로 돈다. 시연(11/24) 동안 서버를 고정하려면 gh workflow disable Deploy로 끄고 끝난 뒤 다시 켠다.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - dev
 
 permissions:
   contents: read
