@@ -292,7 +292,18 @@ function ProductGrid({ list, ranked = false, onOpen, onRetry, emptyText }: {
   onRetry: () => void
   emptyText: string
 }) {
-  if (list.loading) return <p className="home__state" role="status">상품을 불러오는 중이에요.</p>
+  // 탭·정렬을 바꿔 새 목록을 불러오는 동안 앞 목록을 흐리게 남겨, 구역 높이와 스크롤 위치가 튀지 않게 한다.
+  // 첫 상품이 달라졌을 때만 새 목록으로 바뀐 것으로 본다. "더 보기"로 뒤에 붙은 상품은 떠오르지 않는다.
+  const [shown, setShown] = useState<ProductSummary[]>([])
+  const [swapped, setSwapped] = useState(false)
+  const settled = !list.loading && list.products !== shown && (list.products.length > 0 || shown.length > 0)
+  if (settled) {
+    setSwapped(shown.length > 0 && list.products[0]?.productId !== shown[0].productId)
+    setShown(list.products)
+  }
+
+  const stale = list.loading && shown.length > 0
+  if (list.loading && !stale) return <p className="home__state" role="status">상품을 불러오는 중이에요.</p>
   if (list.error) {
     return (
       <div className="home__state" role="alert">
@@ -301,10 +312,12 @@ function ProductGrid({ list, ranked = false, onOpen, onRetry, emptyText }: {
       </div>
     )
   }
-  if (list.products.length === 0) return <p className="home__state">{emptyText}</p>
+  const products = stale ? shown : list.products
+  if (products.length === 0) return <p className="home__state">{emptyText}</p>
   return (
-    <div className="home__product-grid">
-      {list.products.map((product, index) => (
+    <div className={`home__product-grid${stale ? ' is-stale' : swapped ? ' is-swapped' : ''}`} aria-busy={stale}>
+      {stale && <p className="sr-only" role="status">상품을 불러오는 중이에요.</p>}
+      {products.map((product, index) => (
         <HomeProductCard key={product.productId} product={product} rank={ranked ? index + 1 : undefined}
           onOpen={onOpen} />
       ))}
