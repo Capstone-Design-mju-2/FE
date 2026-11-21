@@ -13,7 +13,8 @@ export class ApiRequestError extends Error {
   }
 }
 
-const TIMEOUT_MS = 90_000
+// 채팅이 쓰는 기본값. gateway의 채팅 제한(165초)보다 길어야 화면이 gateway의 503 답을 받는다(BE ADR-187).
+const TIMEOUT_MS = 180_000
 
 type RequestOptions = { timeoutMs?: number }
 
