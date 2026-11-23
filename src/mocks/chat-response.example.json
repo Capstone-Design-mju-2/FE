@@ -6,6 +6,7 @@
       "name": "수분크림 A",
       "brand": "브랜드 A",
       "price": 25900,
+      "productUrl": "https://www.musinsa.com/products/101000",
       "reason": "건성 피부 사용자의 보습력 평가가 높고 끈적임 언급이 적습니다.",
       "evidence": [
         { "reviewId": 9001, "rating": 5, "excerpt": "건성인데 아침까지 당김 없이 촉촉해요" },

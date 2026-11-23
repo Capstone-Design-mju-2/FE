@@ -90,6 +90,16 @@
   margin-top: 12px;
 }
 
+/* 로즈 주 버튼은 주문하기 하나라서 무신사 링크는 글자 링크로 둔다. */
+.product-card__musinsa {
+  margin-top: 10px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
 .product-card__price {
   font-size: 21px;
   font-weight: 700;
