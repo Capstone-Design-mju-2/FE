@@ -1,5 +1,6 @@
 import { formatInventory, formatPrice } from '../lib/format'
 import { highlight, highlightTerms } from '../lib/highlight'
+import { musinsaUrl } from '../lib/musinsa'
 import { canOrder } from '../lib/order'
 import type { Product } from '../types/api'
 import ProductImage from './ProductImage'
@@ -15,6 +16,7 @@ function ProductCard({ product, question = '', onOrder }: Props) {
   const stock = formatInventory(product.inventory)
   const orderable = canOrder(product.inventory)
   const terms = highlightTerms(question)
+  const musinsa = musinsaUrl(product.productUrl)
 
   return (
     <article className="product-card">
@@ -51,6 +53,12 @@ function ProductCard({ product, question = '', onOrder }: Props) {
             ))}
           </ul>
         </div>
+
+        {musinsa && (
+          <a className="product-card__musinsa" href={musinsa} target="_blank" rel="noopener noreferrer">
+            무신사에서 보기<span className="sr-only"> (새 탭에서 열림)</span>
+          </a>
+        )}
 
         <div className="product-card__buy">
           <span className="product-card__price">{formatPrice(product.price)}</span>
